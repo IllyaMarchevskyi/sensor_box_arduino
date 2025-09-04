@@ -23,16 +23,15 @@ static uint32_t tft_update_timer = 0;
 static uint32_t sensor_box_timer = 0;
 static uint32_t meteo_timer = 0;
 static uint32_t bbdg_timer = 0;
+static uint32_t main_timer = 0;
 
 // ---------------- Ethernet/Modbus TCP ----------------
 EthernetServer server(MODBUS_TCP_PORT);
 
 // send_arr: kept as double in RAM, sent as float32 on wire (explicit cast)
 static double   send_arr[SEND_ARR_SIZE + 1] = {0};
-static float    acc_sum[21] = {0};
-static float    acc_sq_sum[21] = {0};
-constexpr uint8_t SAMPLES_PER_MIN    = 60;
-constexpr size_t CH_COUNT            = 21;
+static float    acc_sum[CH_COUNT] = {0};
+static float    acc_sq_sum[CH_COUNT] = {0};
 static uint16_t acc_count            = 0;
 static uint32_t send_arr_last_update = 0;
 static uint32_t last_sec_tick        = 0;
@@ -123,8 +122,8 @@ void loop() {
     main_timer = millis();
 
 
-    // SERViSE Temperature
-    TIME_CALL(readTH_ID10(service_t))
+    // SERVICE Temperature
+    TIME_CALL("Service_T", readTH_ID10(service_t));
     
     // Sensor Box
     Serial.println("Start Sensor Box");
@@ -135,21 +134,21 @@ void loop() {
 
   }
 
-  // BDBG-09
+  // BDBG-09 (skip if TCP aggregator 4 is alive)
   if (!alive4){
-  Serial.println("Start BDBG-09");
-  bdbgPeriodicRequest();
-  while (Serial2.available()) { bdbgFeedByte(Serial2.read()); }
-  bdbgTryFinalizeFrame();
-  Serial.println("Start BDBG-09");
+    Serial.println("Start BDBG-09");
+    bdbgPeriodicRequest();
+    while (Serial2.available()) { bdbgFeedByte(Serial2.read()); }
+    bdbgTryFinalizeFrame();
+    Serial.println("Finish BDBG-09");
   }
 
-  // Meteo
+  // Meteo (skip if TCP aggregator 4 is alive)
   if (!alive4){
-  Serial.println("Start Meteo");
-  while (Serial1.available()) { meteoFeedByte(Serial1.read()); }
-  meteoTryFinalizeFrame();
-  Serial.println("Start Meteo");
+    Serial.println("Start Meteo");
+    while (Serial1.available()) { meteoFeedByte(Serial1.read()); }
+    meteoTryFinalizeFrame();
+    Serial.println("Finish Meteo");
   }
 
 

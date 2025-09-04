@@ -34,6 +34,7 @@ void drawData() {
 
 void drawOnlyValue() {
   if (millis() - tft_update_timer <  TFT_REFRESH_MS) return;
+  tft_update_timer = millis();
   for (int i = 0; i < labels_len; i++) {
     if (send_arr[i] != prev_send_arr[i]) {
       int x = (i < len_col) ? col1_x_value : (i < len_col*2) ? col2_x_value: col3_x_value;

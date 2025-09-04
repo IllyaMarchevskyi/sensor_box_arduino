@@ -59,6 +59,10 @@ uint8_t time_sleep = 100;
 constexpr uint16_t GAS_START_ADDR = 20; 
 constexpr uint16_t GAS_REG_COUNT = 6; 
 
+// ---------- Aggregation sizes ----------
+constexpr uint8_t SAMPLES_PER_MIN = 60;   // accumulate 60 sec for minute avg
+constexpr size_t  CH_COUNT        = 21;   // number of channels to aggregate
+
 
 
 
