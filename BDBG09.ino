@@ -1,5 +1,7 @@
 void bdbgPeriodicRequest() {
   if (millis() - bdbg_last_req >= BDBG_REQ_PERIOD_MS) {
+    Serial.println("Start BDBG-09");
+
     bdbg_last_req = millis();
     digitalWrite(BDBG_DIR_PIN, HIGH);
     while (Serial2.available()) Serial2.read();
@@ -28,5 +30,6 @@ void bdbgTryFinalizeFrame() {
       Serial.print("BDBG: bad length="); Serial.println(bdbg_idx);
     }
     bdbg_idx = 0; bdbg_has_data = false;
+    Serial.println("Finish BDBG-09");
   }
 }

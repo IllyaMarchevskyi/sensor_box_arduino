@@ -52,7 +52,7 @@ const uint8_t PM_START_ADDR     = 1;
 const uint8_t PM_REG_COUNT      = 4; 
 
 // ID 4
-const IPAddress ip_4(#, #, #, #);
+const IPAddress ip_4(192,168,0,1);
 const int port = 5581;
 uint8_t time_sleep = 100;
 

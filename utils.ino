@@ -79,19 +79,19 @@ void arrSumPeriodicUpdate() {
   // acc_sum[18] = radiation_uSvh; // radiation
   // acc_sum[19] = 22.5;           // internal temp (placeholder)
   // acc_sum[20] = 22.5;           // internal temp (placeholder)
-  Serial.println();
-  for(int id=0; id< 21; id++)
-  {
-    Serial.print(labels[id]);
-    Serial.print(": ");
-    Serial.print("acc_sum");
-    Serial.print('[');
-    Serial.print(id);
-    Serial.print("]=");
-    Serial.print(acc_sum[id]);
-    Serial.println(';');
-  }
-  Serial.println();
+  // Serial.println();
+  // for(int id=0; id< 21; id++)
+  // {
+  //   Serial.print(labels[id]);
+  //   Serial.print(": ");
+  //   Serial.print("acc_sum");
+  //   Serial.print('[');
+  //   Serial.print(id);
+  //   Serial.print("]=");
+  //   Serial.print(acc_sum[id]);
+  //   Serial.println(';');
+  // }
+  // Serial.println();
 }
 
 // ============================== send_arr Maintenance ========================
@@ -117,16 +117,14 @@ void collectAndAverageEveryMinute() {
   // Раз на секунду
   if (millis() - last_sec_tick < 1000) return;
   Serial.print("Last_sec_tick: "); Serial.println(last_sec_tick);
-  last_sec_tick += 1000; // так тримаємо стабільний ритм
+  last_sec_tick += 1000; 
 
-  // 1) Накопичуємо суму по кожному з CH_COUNT каналів
   arrSumPeriodicUpdate();
   // for (size_t i = 0; i < CH_COUNT; ++i) {
   //   acc_sum[i] += (float)send_arr[i];  // double -> float ок
   // }
   // acc_count++;
 
-  // 2) Коли набігло 60 зразків — рахуємо середнє, скидаємо суматор
   if (acc_count >= SAMPLES_PER_MIN) {
     for (size_t index = 0; index < CH_COUNT; ++index) {
       float tmp = acc_sum[index] / acc_count;

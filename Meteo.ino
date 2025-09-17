@@ -1,6 +1,7 @@
 
 
 void meteoFeedByte(uint8_t b) {
+  Serial.println("Start Meteo");
   meteo_frame_buf[meteo_idx] = b;
   if (meteo_idx < sizeof(meteo_frame_buf) - 1) meteo_idx++;
   meteo_has_frame = true;
@@ -16,6 +17,7 @@ void meteoTryFinalizeFrame() {
       Serial.print("METEO: bad length="); Serial.println(meteo_idx);
     }
     meteo_idx = 0; meteo_has_frame = false;
+    Serial.println("Finish Meteo");
   }
 }
 

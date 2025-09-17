@@ -93,6 +93,8 @@ void post_transmission_main();
 
 // ================================== SETUP ==================================
 int tmp_id_value = 0;
+int main_timer = 0;
+static uint32_t relay = 0;
 
 
 void setup() {
@@ -124,38 +126,36 @@ void loop() {
 
 
     // SERViSE Temperature
-    TIME_CALL(readTH_ID10(service_t))
+    TIME_CALL("Service t and rh", readTH_ID10(service_t));
     
-    // Sensor Box
-    Serial.println("Start Sensor Box");
-    TIME_CALL("SensorBox", pollAllSensorBoxes(alive2, alive4, alive6, alive7));
-    Serial.println("Finish Sensor Box");
-    // sendArrPeriodicUpdate();
+    // // Sensor Box
+    // Serial.println("Start Sensor Box");
+    // TIME_CALL("SensorBox", pollAllSensorBoxes(alive2, alive4, alive6, alive7));
+    // Serial.println("Finish Sensor Box");
+    // // sendArrPeriodicUpdate();
 
 
   }
 
-  // BDBG-09
-  if (!alive4){
-  Serial.println("Start BDBG-09");
-  bdbgPeriodicRequest();
-  while (Serial2.available()) { bdbgFeedByte(Serial2.read()); }
-  bdbgTryFinalizeFrame();
-  Serial.println("Start BDBG-09");
-  }
+  // // BDBG-09
+  // if (!alive4){
+  // bdbgPeriodicRequest();
+  // while (Serial2.available()) { bdbgFeedByte(Serial2.read()); }
+  // bdbgTryFinalizeFrame();
+  // }
 
-  // Meteo
-  if (!alive4){
-  Serial.println("Start Meteo");
-  while (Serial1.available()) { meteoFeedByte(Serial1.read()); }
-  meteoTryFinalizeFrame();
-  Serial.println("Start Meteo");
-  }
+  // // Meteo
+  // if (!alive4){
+  // while (Serial1.available()) { meteoFeedByte(Serial1.read()); }
+  // meteoTryFinalizeFrame();
+  // }
 
-
+  IPAddress NET_CHECK_IP(8,8,8,8); // або твій сервер
+  const uint16_t NET_CHECK_PORT = 53;
   TIME_CALL("Work with data", collectAndAverageEveryMinute());
   TIME_CALL("Modbus connect", modbusTcpServiceOnce());
   TIME_CALL("Drawing value on arduino", drawOnlyValue());
+  TIME_CALL("Ralay", ensureNetOrRebootPort0(NET_CHECK_IP, NET_CHECK_PORT));
   uint32_t dt_ms = millis() - t1;
   if (dt_ms > 500) {Serial.print("Час: "); Serial.print(dt_ms); Serial.println(" ms");}
 
