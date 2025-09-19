@@ -1,3 +1,13 @@
+#include <Arduino.h>
+
+// Moved from Globals.h (module-specific)
+static uint8_t  bdbg_raw[10]   = {0};
+static uint8_t  bdbg_buf[20]   = {0};
+static uint8_t  bdbg_idx       = 0;
+static uint32_t bdbg_last_req  = 0;
+static uint32_t bdbg_reset_ts  = 0;
+static bool     bdbg_has_data  = false;
+
 void bdbgPeriodicRequest() {
   if (millis() - bdbg_last_req >= BDBG_REQ_PERIOD_MS) {
     Serial.println("Start BDBG-09");

@@ -54,7 +54,8 @@ const uint8_t PM_REG_COUNT      = 4;
 // ID 4
 const IPAddress ip_4(192,168,0,1);
 const int port = 5581;
-uint8_t time_sleep = 100;
+uint8_t time_sleep = 20;
+
 
 constexpr uint16_t GAS_START_ADDR = 20; 
 constexpr uint16_t GAS_REG_COUNT = 6; 
@@ -75,6 +76,8 @@ constexpr uint16_t MODBUS_TCP_PORT = 502;
 static const byte MAC_ADDR[] = {0xDE,0xAD,0xBE,0xEF,0xFE,0xED};
 static const IPAddress STATIC_IP(192,168,0,101);
 static const IPAddress DNS_IP(192,168,0,1);
+// Limit how long EthernetClient::connect waits (ms). Default in Stream is ~1000ms.
+constexpr uint16_t TCP_CONNECT_TIMEOUT_MS = 200; // try 200–400ms; tune as needed
 uint8_t resp[256];
 
 

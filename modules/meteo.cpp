@@ -1,4 +1,14 @@
+#include <Arduino.h>
 
+// Moved from Globals.h (module-specific)
+static uint8_t  meteo_raw[21]       = {0};
+static uint8_t  meteo_frame_buf[31] = {0};
+static uint8_t  meteo_idx           = 0;
+static uint32_t meteo_reset_ts      = 0;
+static bool     meteo_has_frame     = false;
+
+// Prototypes for local helpers
+void meteoDecodeToValues();
 
 void meteoFeedByte(uint8_t b) {
   Serial.println("Start Meteo");

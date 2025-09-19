@@ -1,8 +1,18 @@
+#include <Arduino.h>
+#include <TFT_eSPI.h>
+
+// Moved from Globals.h (module-specific)
+TFT_eSPI tft;
+static uint32_t tft_update_timer = 0;
 
 const int col1_x = 0, col1_x_value = 80, col2_x = 170, col2_x_value = 240, col3_x = 330, col3_x_value = 410, y_step = 30;
 const int len_col = 10;
 static float prev_send_arr[31] = {0};
 const int len_prev_send_arr = sizeof(prev_send_arr)/sizeof(prev_send_arr[0]);
+
+// Prototypes for local functions
+void drawData();
+void drawOnlyValue();
 
 void initDisplay() {
   tft.init();

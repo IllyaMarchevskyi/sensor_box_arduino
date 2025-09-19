@@ -1,3 +1,10 @@
+#include <Arduino.h>
+#include <Ethernet.h>
+
+EthernetServer server(MODBUS_TCP_PORT);
+
+void modbusTcpHandleRequest(EthernetClient &client, const uint8_t *request, size_t n);
+
 void modbusTcpServiceOnce() {
   EthernetClient client = server.available();
   if (!client || !client.connected()) return;
