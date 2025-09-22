@@ -9,9 +9,28 @@ static float    acc_sum[21] = {0};
 static float    acc_sq_sum[21] = {0};
 constexpr uint8_t SAMPLES_PER_MIN    = 60;
 
-
-// Simple RS-485 bus lock to avoid overlapping Serial3 use
 volatile bool g_rs485_busy = false;
+
+
+#define ENABLE_TIMING 1
+
+#if ENABLE_TIMING
+  #define TIME_CALL(label, call_expr) do {                        \
+    uint32_t __t0  = micros();                                    \
+    uint32_t __t0m = millis();                                    \
+    (void)(call_expr);                                            \
+    uint32_t __dus = micros() - __t0;                             \
+    uint32_t __dms = millis() - __t0m;                            \
+    if (__dms > 100) {                                            \
+      Serial.print(F("[T] ")); Serial.print(label);               \
+      Serial.print(F(": "));  Serial.print(__dus);                \
+      Serial.print(F(" us  (~")); Serial.print(__dms);            \
+      Serial.println(F(" ms)"));                                  \
+    }                                                             \
+  } while (0)
+#else
+  #define TIME_CALL(label, call_expr) (void)(call_expr)
+#endif
 
 bool rs485_acquire(uint16_t timeout_ms=300) {
   uint32_t t0 = millis();
@@ -25,6 +44,7 @@ bool rs485_acquire(uint16_t timeout_ms=300) {
 
 void rs485_release() {
   g_rs485_busy = false;
+  delayMicroseconds(4000);
 }
 
 
@@ -59,11 +79,7 @@ void printHex(const uint8_t* b, size_t n) {
 
 void arrSumPeriodicUpdate() {
 
-  // for (size_t i = 0; i < CH_COUNT; ++i) {
-  //   float value = INIT_SEND_ARR_0_13[i][tmp_id_value%6];
-  //   acc_sum[i] += value;  // double -> float ок
-  //   acc_sq_sum[i] += value * value;
-  // }
+
   acc_sum[0]  += sensors_dec[0]; // CO
   acc_sq_sum[0] += sensors_dec[0] * sensors_dec[0];
 
@@ -129,6 +145,12 @@ void arrSumPeriodicUpdate() {
 
   acc_sum[20] += service_t[1];
   acc_sq_sum[20] += service_t[1] * service_t[1];
+
+    for (size_t i = 0; i < CH_COUNT; ++i) {
+    float value = INIT_SEND_ARR_0_13[i][tmp_id_value%6];
+    acc_sum[i] += value;  // double -> float ок
+    acc_sq_sum[i] += value * value;
+  }
 }
 
 // ============================== send_arr Maintenance ========================

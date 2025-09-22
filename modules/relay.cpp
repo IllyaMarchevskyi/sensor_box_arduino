@@ -1,7 +1,6 @@
 static uint32_t relay = 0;
-uint8_t req[] = {0x0B, 0x05, 0x02, 0x00, 0x0A, 0x00};
-IPAddress NET_CHECK_IP(8,8,8,8); 
-const uint16_t NET_CHECK_PORT = 53;
+uint8_t req[] = {0x0B, 0x05, 0x02, 0x00, 0x64, 0x00};
+
 
 uint16_t crc16_modbus(const uint8_t* p, size_t n);
 void relayTimedPulse(uint8_t unitId, uint8_t channel, uint16_t ticks100ms);
@@ -47,7 +46,6 @@ void relayTimedPulse(uint8_t unitId, uint8_t channel, uint16_t ticks100ms) {
 bool isInternetAlive(const IPAddress& testIp, uint16_t port, uint16_t timeoutMs=600) {
   Ethernet.maintain();                 
   EthernetClient c;
-  c.setTimeout(TCP_CONNECT_TIMEOUT_MS);
   uint32_t t0 = millis();
   bool ok = c.connect(testIp, port);
   uint32_t dt = millis() - t0;
@@ -60,13 +58,10 @@ bool isInternetAlive(const IPAddress& testIp, uint16_t port, uint16_t timeoutMs=
 }
 
 void ensureNetOrRebootPort0() {
-  if (millis() - relay < 6000) return;
-  relay += 6000;
+  if (millis() - relay < RELAY_SLEEP) return;
+  relay += RELAY_SLEEP;
   
   if (isInternetAlive(NET_CHECK_IP, NET_CHECK_PORT)) return;
-
-  const uint8_t UNIT_ID = 11;      // тадреса 11
-  const uint8_t CH      = 0;       // порт 0
 
   relayTimedPulse(UNIT_ID, CH, 5);
 }

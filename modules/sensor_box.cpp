@@ -66,7 +66,6 @@ void printEthDiag(EthernetClient &c) {
 
 bool pingId_Ethernet(const IPAddress& ip, uint16_t port, uint16_t timeoutMs = 800) {
   EthernetClient client;
-  client.setTimeout(TCP_CONNECT_TIMEOUT_MS);
   Serial.print(F("Connect ")); Serial.print(ip); Serial.print(F(":")); Serial.println(port);
   #if defined(ETHERNET_H)
     if (Ethernet.hardwareStatus() == EthernetNoHardware) {
@@ -102,6 +101,7 @@ bool pingId(uint8_t id) {
   if (!rs485_acquire(500)) return false;
   sensor_box.begin(id, Serial3);
   uint8_t res = sensor_box.readHoldingRegisters(20, 2);
+  Serial.print("pingId res=0x"); Serial.println(res, HEX);
   bool ok = (res == sensor_box.ku8MBSuccess);
   rs485_release();
   return ok;
@@ -166,7 +166,6 @@ void sendHexTCP(float* mass, const IPAddress& ip, uint16_t port,
                 const uint8_t* data, size_t len, uint16_t timeoutMs)
 {
   EthernetClient client;
-  client.setTimeout(TCP_CONNECT_TIMEOUT_MS);
   if (!pingId_Ethernet(ip, port)) return;
   client.connect(ip, port);
 
@@ -194,31 +193,63 @@ void sendHexTCP(float* mass, const IPAddress& ip, uint16_t port,
   Serial.println(F("----------------------"));
 }
 
-void pollAllSensorBoxes(bool& alive2, bool& alive4, bool& alive6, bool& alive7) {
-  alive2=alive4=alive6=alive7=false;
+void pollAllSensorBoxes(bool& alive1, bool& alive2, bool& alive3, bool& alive4) {
   // 1) Ping primary IDs
   for (uint8_t i=0; i<PRIMARY_COUNT; ++i) {
     uint8_t id = PRIMARY_IDS[i];
-    bool ok = (id == 4) ? pingId_Ethernet(ip_4, port, time_sleep) : pingId(id);
-    if      (id==2) alive2 = ok;
-    else if (id==4) alive4 = ok;
-    else if (id==6) alive6 = ok;
-    else if (id==7) alive7 = ok;
+    bool ok = (id == PRIMARY_IDS[1]) ? pingId_Ethernet(ip_4, port, time_sleep) : pingId(id);
+    if      (id==PRIMARY_IDS[0]) alive1 = ok;
+    else if (id==PRIMARY_IDS[1]) alive2 = ok;
+    else if (id==PRIMARY_IDS[2]) alive3 = ok;
+    else if (id==PRIMARY_IDS[3]) alive4 = ok;
   }
 
+  Serial.print("ID2: "); Serial.print(alive1); Serial.print(" | ");
+  Serial.print("ID4: "); Serial.print(alive2); Serial.print(" | ");
+  Serial.print("ID6: "); Serial.print(alive3); Serial.print(" | ");
+  Serial.print("ID7: "); Serial.println(alive4); Serial.print(" | ");
+
   // 2) Build list of additional IDs to poll
-  uint8_t toPoll[7] = {0}; uint8_t nPoll = 0;
-  if (alive2) for (uint8_t i=0;i<EXTRA_ONLY2_CNT;++i) toPoll[nPoll++] = EXTRA_IF_ONLY2[i];
-  if (alive4) for (uint8_t i=0;i<EXTRA_ONLY4_CNT;++i) toPoll[nPoll++] = EXTRA_IF_ONLY4[i];
-  if (alive6) for (uint8_t i=0;i<EXTRA_ONLY6_CNT;++i) toPoll[nPoll++] = EXTRA_IF_ONLY6[i];
-  if (alive7) for (uint8_t i=0;i<EXTRA_ONLY7_CNT;++i) toPoll[nPoll++] = EXTRA_IF_ONLY7[i];
+  uint8_t toPoll[7] = {0}; 
+  uint8_t nPoll = 0;
+  if (alive1) for (uint8_t i=0;i<EXTRA_ONLY2_CNT;++i) toPoll[nPoll++] = EXTRA_IF_ONLY2[i];
+  if (alive2) for (uint8_t i=0;i<EXTRA_ONLY4_CNT;++i) toPoll[nPoll++] = EXTRA_IF_ONLY4[i];
+  if (alive3) for (uint8_t i=0;i<EXTRA_ONLY6_CNT;++i) toPoll[nPoll++] = EXTRA_IF_ONLY6[i];
+  if (alive4) for (uint8_t i=0;i<EXTRA_ONLY7_CNT;++i) toPoll[nPoll++] = EXTRA_IF_ONLY7[i];
 
   // 3) Poll and map results into sensors_dec
   for (uint8_t i=0; i<nPoll; ++i) {
     uint8_t id = toPoll[i];
     float v[4] = {0};
 
-    if (id == 6) {
+    if (id == 1) {
+      // uint8_t REQ[12] = {0};
+      // size_t len = buildMbTcpRead03(REQ, 0, /*id*/id, /*addr*/0x0032, /*qty*/4);
+      // sendHexTCP(v, ip_4, port, REQ, len, time_sleep);
+      // sensors_dec[1] = v[0]; // SO2
+      // sensors_dec[4] = v[1]; // H2S
+    } else if (id == 2) {
+      if (!read3Floats(id, v, GAS_START_ADDR, GAS_REG_COUNT)) continue;
+      sensors_dec[5] = v[0]; // O3
+      sensors_dec[3] = v[1]; // NO
+      sensors_dec[4] = v[2]; // H2S
+      // sensors_dec[4] = v[3]; // H2S
+    } else if (id == 3) {
+      uint8_t REQ[12] = {0};
+      size_t len = buildMbTcpRead03(REQ, 0, /*id*/id, /*addr*/0x0031, /*qty*/2);
+      sendHexTCP(v, ip_3, port, REQ, len, time_sleep);
+      sensors_dec[0] = v[0]; // CO
+    } else if (id == 4) {
+      uint8_t REQ[12] = {0};
+      size_t len = buildMbTcpRead03(REQ, 0, /*id*/id, /*addr*/0x0031, /*qty*/2);
+      sendHexTCP(v, ip_4, port, REQ, len, time_sleep);
+      sensors_dec[0] = v[0]; // CO
+    } else if (id == 5) {
+      if (!read3Floats(id, v, GAS_START_ADDR, GAS_REG_COUNT)) continue;
+      sensors_dec[0] = v[0]; // CO
+      sensors_dec[2] = v[1]; // NO2
+      sensors_dec[1] = v[2]; // SO2
+    } else if (id == 6) {
       if (!read3Floats(id, v, GAS_START_ADDR, GAS_REG_COUNT)) continue;
       sensors_dec[5] = v[0]; // O3
       sensors_dec[3] = v[1]; // NO
@@ -228,33 +259,17 @@ void pollAllSensorBoxes(bool& alive2, bool& alive4, bool& alive6, bool& alive7) 
       sensors_dec[5] = v[0]; // O3
       sensors_dec[6] = v[1]; // NH3
       sensors_dec[4] = v[2]; // H2S
-    } else if (id == 5) {
-      if (!read3Floats(id, v, GAS_START_ADDR, GAS_REG_COUNT)) continue;
-      sensors_dec[0] = v[0]; // CO
-      sensors_dec[2] = v[1]; // NO2
-      sensors_dec[1] = v[2]; // SO2
-    } else if (id == 1) {
-      uint8_t REQ[12] = {0};
-      size_t len = buildMbTcpRead03(REQ, 0, /*id*/id, /*addr*/0x0032, /*qty*/4);
-      sendHexTCP(v, ip_4, port, REQ, len, time_sleep);
-      sensors_dec[1] = v[0]; // SO2
-      sensors_dec[4] = v[1]; // H2S
-    } else if (id == 2) {
-      uint8_t REQ[12] = {0};
-      size_t len = buildMbTcpRead03(REQ, 0, /*id*/id, /*addr*/0x0031, /*qty*/2);
-      sendHexTCP(v, ip_4, port, REQ, len, time_sleep);
-      sensors_dec[0] = v[0]; // CO
     } else if (id == 8) {
       float NO = 0, NO2 = 0;
       uint8_t REQ[12] = {0};
       size_t len = buildMbTcpRead03(REQ, 0, /*id*/id, /*addr*/0x0031, /*qty*/2);
-      sendHexTCP(v, ip_4, port, REQ, len, time_sleep);
+      sendHexTCP(v, ip_8, port, REQ, len, time_sleep);
       NO = v[0];
       len = buildMbTcpRead03(REQ, 0, /*id*/id, /*addr*/0x0037, /*qty*/2);
-      sendHexTCP(v, ip_4, port, REQ, len, time_sleep);
+      sendHexTCP(v, ip_8, port, REQ, len, time_sleep);
       NO2 = v[0];
       len = buildMbTcpRead03(REQ, 0, /*id*/id, /*addr*/0x00b7, /*qty*/2);
-      sendHexTCP(v, ip_4, port, REQ, len, time_sleep);
+      sendHexTCP(v, ip_8, port, REQ, len, time_sleep);
       sensors_dec[3] = NO;   // NO
       sensors_dec[2] = NO2;  // NO2
       sensors_dec[6] = v[0]; // NH3

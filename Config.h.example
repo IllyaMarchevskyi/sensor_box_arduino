@@ -1,104 +1,92 @@
-#define ARRLEN(a) (sizeof(a)/sizeof((a)[0]))
-#define ENABLE_TIMING 1
-
-#define ENABLE_TIMING 1
-
-#if ENABLE_TIMING
-  #define TIME_CALL(label, call_expr) do {                        \
-    uint32_t __t0  = micros();                                    \
-    uint32_t __t0m = millis();                                    \
-    (void)(call_expr);                                            \
-    uint32_t __dus = micros() - __t0;                             \
-    uint32_t __dms = millis() - __t0m;                            \
-    if (__dms > 100) {                                            \
-      Serial.print(F("[T] ")); Serial.print(label);               \
-      Serial.print(F(": "));  Serial.print(__dus);                \
-      Serial.print(F(" us  (~")); Serial.print(__dms);            \
-      Serial.println(F(" ms)"));                                  \
-    }                                                             \
-  } while (0)
-#else
-  #define TIME_CALL(label, call_expr) (void)(call_expr)
+// ---------- Helpers ----------
+#ifndef ARRLEN
+#define ARRLEN(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
 // ---------- Pins ----------
-constexpr uint8_t RS485_DIR_PIN = 5; // DE/RE for RS-485 (Sensor Box)
-constexpr uint8_t BDBG_DIR_PIN = 4; // TX enable for BDBG line (if used)
-constexpr uint8_t ENC28J60_CS = 10; // Ethernet CS
+constexpr uint8_t RS485_DIR_PIN = 5;  // DE/RE for RS-485 (Sensor Box)
+constexpr uint8_t BDBG_DIR_PIN  = 4;  // TX enable for BDBG line (if used)
+constexpr uint8_t ETH_CS = 10; // Ethernet CS
 
-
-// ---------- UART speeds & formats ----------
+// ---------- UART Speeds & Formats ----------
 constexpr uint32_t SERIAL0_BAUD = 115200; // USB debug
-constexpr uint32_t SERIAL1_BAUD = 9600; // Meteo, 8N1
-constexpr uint32_t SERIAL2_BAUD = 19200; // BDBG-09, 8N1
-constexpr uint32_t SERIAL3_BAUD = 9600; // Sensor Box, 8E1 (adjust if your device differs)
-
+constexpr uint32_t SERIAL1_BAUD = 9600;   // Meteo, 8N1
+constexpr uint32_t SERIAL2_BAUD = 19200;  // BDBG-09, 8N1
+constexpr uint32_t SERIAL3_BAUD = 9600;   // Sensor Box
 
 // ---------- Sensor Box (Modbus RTU) ----------
-const uint8_t PRIMARY_IDS[] = {2, 4, 6, 7};
-const uint8_t PRIMARY_COUNT = ARRLEN(PRIMARY_IDS);
+// Primary/extra device IDs
+const uint8_t PRIMARY_IDS[]      = { 2, 4, 6, 7 };
+const uint8_t PRIMARY_COUNT      = ARRLEN(PRIMARY_IDS);
+const uint8_t EXTRA_IF_ONLY2[]   = { 2 };
+const uint8_t EXTRA_IF_ONLY4[]   = { 4, 3, 8 };
+const uint8_t EXTRA_IF_ONLY6[]   = { 6, 5 };
+const uint8_t EXTRA_IF_ONLY7[]   = { 7, 5 };
+const uint8_t EXTRA_ONLY2_CNT    = ARRLEN(EXTRA_IF_ONLY2);
+const uint8_t EXTRA_ONLY4_CNT    = ARRLEN(EXTRA_IF_ONLY4);
+const uint8_t EXTRA_ONLY6_CNT    = ARRLEN(EXTRA_IF_ONLY6);
+const uint8_t EXTRA_ONLY7_CNT    = ARRLEN(EXTRA_IF_ONLY7);
 
-const uint8_t EXTRA_IF_ONLY2[]  = {5};
-const uint8_t EXTRA_IF_ONLY4[]  = {1};
-const uint8_t EXTRA_IF_ONLY6[]  = {6, 5};
-const uint8_t EXTRA_IF_ONLY7[]  = {7, 5};
-const uint8_t EXTRA_ONLY2_CNT   = ARRLEN(EXTRA_IF_ONLY2);
-const uint8_t EXTRA_ONLY4_CNT   = ARRLEN(EXTRA_IF_ONLY4);
-const uint8_t EXTRA_ONLY6_CNT   = ARRLEN(EXTRA_IF_ONLY6);
-const uint8_t EXTRA_ONLY7_CNT   = ARRLEN(EXTRA_IF_ONLY7);
+// PM sensor map
+const uint8_t  PM_ID             = 10;
+const uint8_t  PM_START_ADDR     = 1;
+const uint8_t  PM_REG_COUNT      = 4;
 
-const uint8_t  PM_ID            = 10;
-const uint8_t PM_START_ADDR     = 1; 
-const uint8_t PM_REG_COUNT      = 4; 
-
-// ID 4
-const IPAddress ip_4(192,168,0,1);
-const int port = 5581;
-uint8_t time_sleep = 20;
-
-
-constexpr uint16_t GAS_START_ADDR = 20; 
-constexpr uint16_t GAS_REG_COUNT = 6; 
-
-
-
-
-// ---------- Periods / Timings (ms) ----------
-constexpr uint32_t TFT_REFRESH_MS = 60 * 1000;
-constexpr uint32_t METEO_FRAME_SETTLE_MS = 500;
-constexpr uint32_t BDBG_REQ_PERIOD_MS = 30 * 1000;
-// constexpr uint32_t SENSORBOX_POLL_MS = 1000;
-// constexpr uint32_t SENDARR_UPDATE_MS = 2000;
-
+// Gas register map
+constexpr uint16_t GAS_START_ADDR = 20;
+constexpr uint16_t GAS_REG_COUNT  = 6;
 
 // ---------- Ethernet / Modbus TCP ----------
+// Remote bridge (ID 4)
+const IPAddress ip_4(192, 168, 0, 1);
+const IPAddress ip_3(192, 168, 0, 1);
+const IPAddress ip_8(192, 168, 0, 1);
+const int       port       = 5581;
+uint8_t         time_sleep = 20;
+
+// Local TCP server
 constexpr uint16_t MODBUS_TCP_PORT = 502;
-static const byte MAC_ADDR[] = {0xDE,0xAD,0xBE,0xEF,0xFE,0xED};
-static const IPAddress STATIC_IP(192,168,0,101);
-static const IPAddress DNS_IP(192,168,0,1);
-// Limit how long EthernetClient::connect waits (ms). Default in Stream is ~1000ms.
-constexpr uint16_t TCP_CONNECT_TIMEOUT_MS = 200; // try 200–400ms; tune as needed
+static const byte      MAC_ADDR[]  = { 0x02, 0x11, 0x22, 0x00, 0x00, 0x01 };
+// static const byte      MAC_ADDR[]  = { 0x74, 0x40, 0xBE, 0x51, 0x17, 0x04 };
+static const IPAddress STATIC_IP(192, 168, 0, 101);
+static const IPAddress DNS_IP(192, 168, 0, 1);
 uint8_t resp[256];
 
+// Remote Server
+static const IPAddress APP_IP(192, 168, 0, 103);
 
 
-// ---------- Exported data array ----------
-constexpr int SEND_ARR_SIZE = 30; // number of float32 values exposed (2 regs each)
-constexpr float DEFAULT_SEND_VAL= -1.0f;
+// ---------- Relay ----------
+IPAddress   NET_CHECK_IP(8, 8, 8, 8);
+const uint16_t NET_CHECK_PORT = 53;
+const uint8_t  UNIT_ID        = 12; //
+const uint8_t  CH             = 0;  //
+
+// ---------- Periods / Timings (ms) ----------
+constexpr uint32_t TFT_REFRESH_MS        = 60 * 1000; // sec
+constexpr uint32_t METEO_FRAME_SETTLE_MS = 500;       // sec
+constexpr uint32_t BDBG_REQ_PERIOD_MS    = 30 * 1000; // sec
+constexpr uint32_t DRAW_MONITORING = 2 * 1000; // sec
+constexpr uint32_t RELAY_SLEEP = 600 * 1000; // sec
 
 
-// Optional initial demo values (first 14 channels)
+// ---------- Exported Data Array ----------
+constexpr int   SEND_ARR_SIZE    = 30;   // number of float32 values exposed (2 regs each)
+constexpr float DEFAULT_SEND_VAL = -1.0f;
+
+// Channel labels
 const char* const labels[] = {
-  "CO", "SO2", "NO2", "NO", 
-  "H2S", "O3", "NH3", "PM2.5", 
-  "PM10", "WD", "TEMP", "RH", 
-  "WS", "GST", "RAIN", "UV", 
-  "LUX", "PRES", "R", "S_T", 
-  "S_RH", "S_CO", "S_SO2", "S_NO2", 
-  "S_NO", "S_H2S", "S_O3", "S_NH3", 
-  };
-constexpr size_t labels_len = sizeof(labels)/sizeof(labels[0]);
+  "CO",  "SO2",  "NO2",  "NO",
+  "H2S", "O3",   "NH3",  "PM2.5",
+  "PM10","WD",   "TEMP", "RH",
+  "WS",  "GST",  "RAIN", "UV",
+  "LUX", "PRES", "R",    "S_T",
+  "S_RH","S_CO","S_SO2","S_NO2",
+  "S_NO","S_H2S","S_O3","S_NH3",
+};
+constexpr size_t labels_len = sizeof(labels) / sizeof(labels[0]);
 
+// Optional initial demo values (kept commented)
 static const float INIT_SEND_ARR_0_13[][6] = {
   { -0.7,  -0.69, -0.71, -0.68, -0.72, -0.67 },
   {  0.1,   0.11,  0.09,  0.12,  0.08,  0.13 },
