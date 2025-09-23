@@ -89,6 +89,8 @@ void loop() {
   TIME_CALL("Modbus connect", modbusTcpServiceOnce());
   TIME_CALL("Drawing value on arduino", drawOnlyValue());
   TIME_CALL("Ralay", ensureNetOrRebootPort0());
+  // TIME_CALL("Send to Server", httpPostSensors(SERVER_IP, 4000, "/ingest"));
+  // TIME_CALL("Send to Server", httpPostHello(SERVER_IP, 4000, "/test"));
   uint32_t dt_ms = millis() - t1;
   if (dt_ms > 500) {Serial.print("Час: "); Serial.print(dt_ms); Serial.println(" ms");}
 
