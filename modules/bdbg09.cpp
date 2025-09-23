@@ -30,7 +30,7 @@ void bdbgFeedByte(uint8_t b) {
 }
 
 void bdbgTryFinalizeFrame() {
-  if (bdbg_has_data && millis() - bdbg_reset_ts >= METEO_FRAME_SETTLE_MS) {
+  if (bdbg_has_data && millis() - bdbg_reset_ts >= BDBG_REQ_PERIOD_MS) {
     if (bdbg_idx == 10) {
       for (uint8_t i = 0; i < 10; i++) bdbg_raw[i] = bdbg_buf[i];
       uint32_t raw = ((uint32_t)bdbg_raw[6] << 24) | ((uint32_t)bdbg_raw[5] << 16) |

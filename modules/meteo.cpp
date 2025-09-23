@@ -11,7 +11,6 @@ static bool     meteo_has_frame     = false;
 void meteoDecodeToValues();
 
 void meteoFeedByte(uint8_t b) {
-  Serial.println("Start Meteo");
   meteo_frame_buf[meteo_idx] = b;
   if (meteo_idx < sizeof(meteo_frame_buf) - 1) meteo_idx++;
   meteo_has_frame = true;
@@ -20,6 +19,7 @@ void meteoFeedByte(uint8_t b) {
 
 void meteoTryFinalizeFrame() {
   if (meteo_has_frame && millis() - meteo_reset_ts >= METEO_FRAME_SETTLE_MS) {
+    Serial.println("Start Meteo");
     if (meteo_idx == 17) {
       for (uint8_t i = 0; i < 21; i++) meteo_raw[i] = meteo_frame_buf[i];
       meteoDecodeToValues();

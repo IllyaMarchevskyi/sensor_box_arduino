@@ -63,11 +63,11 @@ const uint8_t  UNIT_ID        = 12; //
 const uint8_t  CH             = 0;  //
 
 // ---------- Periods / Timings (ms) ----------
-constexpr uint32_t TFT_REFRESH_MS        = 60 * 1000; // sec
+constexpr uint32_t TFT_REFRESH_MS        = 60UL * 1000UL; // sec
 constexpr uint32_t METEO_FRAME_SETTLE_MS = 500;       // sec
-constexpr uint32_t BDBG_REQ_PERIOD_MS    = 30 * 1000; // sec
+constexpr uint32_t BDBG_REQ_PERIOD_MS    = 30UL * 1000UL; // sec
 constexpr uint32_t DRAW_MONITORING = 2 * 1000; // sec
-constexpr uint32_t RELAY_SLEEP = 600 * 1000; // sec
+constexpr uint32_t RELAY_SLEEP = 600UL * 1000UL; // sec
 
 
 // ---------- Exported Data Array ----------

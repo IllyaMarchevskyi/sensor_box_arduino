@@ -59,7 +59,7 @@ bool isInternetAlive(const IPAddress& testIp, uint16_t port, uint16_t timeoutMs=
 
 void ensureNetOrRebootPort0() {
   if (millis() - relay < RELAY_SLEEP) return;
-  relay += RELAY_SLEEP;
+  relay = millis();
   
   if (isInternetAlive(NET_CHECK_IP, NET_CHECK_PORT)) return;
 
