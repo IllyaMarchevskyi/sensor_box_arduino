@@ -49,6 +49,7 @@ void setup() {
 
   pinMode(RS485_DIR_PIN, OUTPUT);
   pinMode(BDBG_DIR_PIN,  OUTPUT);
+  digitalWrite(BDBG_DIR_PIN, LOW);
 
   sensor_box.preTransmission(pre_transmission_main);
   sensor_box.postTransmission(post_transmission_main);

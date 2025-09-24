@@ -187,7 +187,7 @@ void post_transmission_main() { digitalWrite(RS485_DIR_PIN, LOW);  }
 void collectAndAverageEveryMinute() {
   if (millis() - last_sec_tick < 1000) return;
   Serial.print("Last_sec_tick: "); Serial.println(last_sec_tick);
-  last_sec_tick += 1000; 
+  last_sec_tick = millis();
 
   arrSumPeriodicUpdate();
   acc_count++;
