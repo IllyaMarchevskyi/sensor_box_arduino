@@ -53,7 +53,9 @@ static const IPAddress DNS_IP(192, 168, 0, 1);
 uint8_t resp[256];
 
 // Remote Server
-static const IPAddress APP_IP(192, 168, 0, 103);
+static const IPAddress SERVER_IP(192, 168, 0, 102);
+uint16_t server_port = 4000;
+const char API_KEY[] = "4f9...f4a";
 
 
 // ---------- Relay ----------

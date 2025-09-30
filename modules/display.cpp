@@ -3,7 +3,9 @@
 
 // Moved from Globals.h (module-specific)
 TFT_eSPI tft;
-static uint32_t tft_update_timer = 0;
+
+// Time guard API from utils
+bool time_guard_allow(const char* key, uint32_t interval_ms);
 
 const int col1_x = 0, col1_x_value = 80, col2_x = 170, col2_x_value = 240, col3_x = 330, col3_x_value = 410, y_step = 30;
 const int len_col = 10;
@@ -43,8 +45,7 @@ void drawData() {
 }
 
 void drawOnlyValue() {
-  if (millis() - tft_update_timer <  DRAW_MONITORING) return;
-  tft_update_timer = millis();
+  if (!time_guard_allow("draw/update", DRAW_MONITORING)) return;
   for (int i = 0; i < labels_len; i++) {
     if (send_arr[i] != prev_send_arr[i]) {
       int x = (i < len_col) ? col1_x_value : (i < len_col*2) ? col2_x_value: col3_x_value;

@@ -56,40 +56,38 @@ void setup() {
   Serial.println("start - Arsenii'sTechnologies");
   initEthernet();
 }
-
-// ================================== LOOP ===================================
 void loop() {
   bool alive2=false, alive4=false, alive6=false, alive7=false;
   uint32_t t1 = millis();
 
-  if(millis() - main_timer >= 1000){
-    main_timer = millis();
-    // SERViSE Temperature
-    TIME_CALL("Service t and rh", readTH_ID10(service_t));
+  // if(millis() - main_timer >= 1000){
+  //   main_timer = millis();
+  //   // SERViSE Temperature
+  //   TIME_CALL("Service t and rh", readTH_ID10(service_t));
     
-    // Sensor Box
-    TIME_CALL("Sensor Box", pollAllSensorBoxes(alive2, alive4, alive6, alive7));
+  //   // Sensor Box
+  //   TIME_CALL("Sensor Box", pollAllSensorBoxes(alive2, alive4, alive6, alive7));
 
-  }
+  // }
 
-  // BDBG-09
-  if (!alive4){
-  bdbgPeriodicRequest();
-  while (Serial2.available()) { bdbgFeedByte(Serial2.read()); }
-  bdbgTryFinalizeFrame();
-  }
+  // // BDBG-09
+  // if (!alive4){
+  // bdbgPeriodicRequest();
+  // while (Serial2.available()) { bdbgFeedByte(Serial2.read()); }
+  // bdbgTryFinalizeFrame();
+  // }
 
-  // Meteo
-  if (!alive4){
-  while (Serial1.available()) { meteoFeedByte(Serial1.read()); }
-  meteoTryFinalizeFrame();
-  }
+  // // Meteo
+  // if (!alive4){
+  // while (Serial1.available()) { meteoFeedByte(Serial1.read()); }
+  // meteoTryFinalizeFrame();
+  // }
 
   TIME_CALL("Work with data", collectAndAverageEveryMinute());
   TIME_CALL("Modbus connect", modbusTcpServiceOnce());
-  TIME_CALL("Drawing value on arduino", drawOnlyValue());
+  // TIME_CALL("Drawing value on arduino", drawOnlyValue());
   TIME_CALL("Ralay", ensureNetOrRebootPort0());
-  // TIME_CALL("Send to Server", httpPostSensors(SERVER_IP, 4000, "/ingest"));
+  TIME_CALL("Send to Server1", httpPostSensors(SERVER_IP, server_port, "/ingest"));
   // TIME_CALL("Send to Server", httpPostHello(SERVER_IP, 4000, "/test"));
   uint32_t dt_ms = millis() - t1;
   if (dt_ms > 500) {Serial.print("Час: "); Serial.print(dt_ms); Serial.println(" ms");}

@@ -1,4 +1,5 @@
-static uint32_t relay = 0;
+// Time guard API from utils
+bool time_guard_allow(const char* key, uint32_t interval_ms);
 uint8_t req[] = {0x0B, 0x05, 0x02, 0x00, 0x64, 0x00};
 
 
@@ -58,8 +59,7 @@ bool isInternetAlive(const IPAddress& testIp, uint16_t port, uint16_t timeoutMs=
 }
 
 void ensureNetOrRebootPort0() {
-  if (millis() - relay < RELAY_SLEEP) return;
-  relay = millis();
+  if (!time_guard_allow("relay", RELAY_SLEEP)) return;
   
   if (isInternetAlive(NET_CHECK_IP, NET_CHECK_PORT)) return;
 

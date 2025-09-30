@@ -1,15 +1,55 @@
 #include <Arduino.h>
+#include <string.h>
 
 constexpr size_t CH_COUNT     = 21;
 int tmp_id_value              = 0;
 static uint16_t acc_count            = 0;
-static uint32_t last_sec_tick        = 0;
 
 static float    acc_sum[21] = {0};
 static float    acc_sq_sum[21] = {0};
 constexpr uint8_t SAMPLES_PER_MIN    = 60;
 
 volatile bool g_rs485_busy = false;
+
+
+// =============================== Time Guard API ============================
+// General per-key throttle to replace patterns like:
+//   if (millis() - last < period) return; last = millis();
+// Usage: if (!time_guard_allow("send/gas", SEND_DATA_TO_SERVER)) return;
+struct _TimeGuardEntry { char key[32]; uint32_t last_ms; };
+static _TimeGuardEntry _tg_entries[8];
+
+bool time_guard_allow(const char* key, uint32_t interval_ms) {
+  uint32_t now = millis();
+  int free_i = -1;
+  for (int i = 0; i < (int)(sizeof(_tg_entries)/sizeof(_tg_entries[0])); ++i) {
+    if (_tg_entries[i].key[0] == '\0') { if (free_i < 0) free_i = i; continue; }
+    if (strcmp(_tg_entries[i].key, key) == 0) {
+      if (now - _tg_entries[i].last_ms < interval_ms) return false;
+      _tg_entries[i].last_ms = now;
+      return true;
+    }
+  }
+  // New key
+  int use_i = (free_i >= 0) ? free_i : 0; // overwrite slot 0 if full
+  strncpy(_tg_entries[use_i].key, key, sizeof(_tg_entries[use_i].key)-1);
+  _tg_entries[use_i].key[sizeof(_tg_entries[use_i].key)-1] = '\0';
+  _tg_entries[use_i].last_ms = now;
+  return true;
+}
+
+uint32_t time_guard_remaining(const char* key, uint32_t interval_ms) {
+  uint32_t now = millis();
+  for (int i = 0; i < (int)(sizeof(_tg_entries)/sizeof(_tg_entries[0])); ++i) {
+    if (_tg_entries[i].key[0] == '\0') continue;
+    if (strcmp(_tg_entries[i].key, key) == 0) {
+      uint32_t elapsed = now - _tg_entries[i].last_ms;
+      if (elapsed >= interval_ms) return 0;
+      return interval_ms - elapsed;
+    }
+  }
+  return 0;
+}
 
 
 #define ENABLE_TIMING 1
@@ -32,7 +72,7 @@ volatile bool g_rs485_busy = false;
   #define TIME_CALL(label, call_expr) (void)(call_expr)
 #endif
 
-bool rs485_acquire(uint16_t timeout_ms=300) {
+bool rs485_acquire(uint16_t timeout_ms=100) {
   uint32_t t0 = millis();
   while (g_rs485_busy) {
     if (millis() - t0 > timeout_ms) return false;
@@ -173,9 +213,7 @@ void pre_transmission_main()  { digitalWrite(RS485_DIR_PIN, HIGH); }
 void post_transmission_main() { digitalWrite(RS485_DIR_PIN, LOW);  }
 
 void collectAndAverageEveryMinute() {
-  if (millis() - last_sec_tick < 1000) return;
-  Serial.print("Last_sec_tick: "); Serial.println(last_sec_tick);
-  last_sec_tick += 1000; 
+  if (!time_guard_allow("sec-tick", 1000)) return;
 
   arrSumPeriodicUpdate();
   acc_count++;

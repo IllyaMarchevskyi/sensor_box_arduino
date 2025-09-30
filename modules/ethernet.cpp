@@ -1,10 +1,16 @@
 #include <Arduino.h>
 #include <Ethernet.h>
 #include <utility/w5100.h>
+#include <string.h>
 
 // 'server' defined in modules/EthernetModbus.cpp
 extern EthernetServer server;
-static uint32_t send_server = 0;
+
+// Time guard API from utils
+bool time_guard_allow(const char* key, uint32_t interval_ms);
+
+// API key defined in Config.h (included in main TU)
+extern const char API_KEY[];
 
 // HTTP POST helpers (declared here for use from other modules if needed)
 bool httpPostSensors(const char* host, uint16_t port, const char* path);
@@ -37,6 +43,7 @@ static size_t buildSensorsJson18(char* out, size_t maxLen) {
   // send_arr[] and labels[] are defined in the main TU and included before this file
   extern double send_arr[];            // from sensor_box_arduino.ino
   extern const char* const labels[];   // from Config.h
+  const int values_number = 19;
 
   size_t pos = 0;
   auto emit = [&](const char* s) {
@@ -46,7 +53,8 @@ static size_t buildSensorsJson18(char* out, size_t maxLen) {
   };
 
   emit("{");
-  for (int i = 0; i < 18; ++i) {
+  emit("\""); emit("id"); emit("\":"); emit("2"); emit(",");
+  for (int i = 0; i < values_number; ++i) {
     // Key
     emit("\""); emit(labels[i]); emit("\":");
     // Value (as number). On AVR, use dtostrf to format float/double reliably.
@@ -55,7 +63,7 @@ static size_t buildSensorsJson18(char* out, size_t maxLen) {
     // Trim leading spaces if any implementation pads
     char* p = num; while (*p == ' ') ++p;
     emit(p);
-    if (i != 17) emit(",");
+    if (i != values_number-1) emit(",");
   }
   emit("}");
   if (pos < maxLen) out[pos] = '\0';
@@ -72,6 +80,9 @@ static bool httpPostBody(EthernetClient &client,
   client.print("Host: "); client.print(hostHeader); client.print("\r\n");
   client.print("User-Agent: SensorBox/1.0\r\n");
   client.print("Content-Type: application/json\r\n");
+  if (API_KEY[0] != '\0') {
+    client.print("X-API-Key: "); client.print(API_KEY); client.print("\r\n");
+  }
   client.print("Connection: close\r\n");
   client.print("Content-Length: "); client.print(bodyLen); client.print("\r\n\r\n");
 
@@ -105,8 +116,7 @@ static bool httpPostSensorsImpl(EthernetClient &client,
 
 // Public: POST to hostname
 bool httpPostSensors(const char* host, uint16_t port, const char* path) {
-  if (millis() - send_server < SEND_DATA_TO_SERVER) return;
-  send_server =millis();
+  if (!time_guard_allow(path, SEND_DATA_TO_SERVER)) return false;
   
   EthernetClient client;
   if (!client.connect(host, port)) {
@@ -118,8 +128,7 @@ bool httpPostSensors(const char* host, uint16_t port, const char* path) {
 
 // Public: POST to IP address
 bool httpPostSensors(const IPAddress& ip, uint16_t port, const char* path) {
-  if (millis() - send_server < SEND_DATA_TO_SERVER) return;
-  send_server = millis();
+  if (!time_guard_allow(path, SEND_DATA_TO_SERVER)) return false;
 
   EthernetClient client;
   if (!client.connect(ip, port)) {
@@ -135,8 +144,7 @@ bool httpPostSensors(const IPAddress& ip, uint16_t port, const char* path) {
 // ========================= Simple "hello: world" POST ======================
 
 bool httpPostHello(const char* host, uint16_t port, const char* path) {
-  if (millis() - send_server < SEND_DATA_TO_SERVER) return;
-  send_server = millis();
+  if (!time_guard_allow(path, SEND_DATA_TO_SERVER)) return false;
 
   EthernetClient client;
   if (!client.connect(host, port)) {
@@ -148,8 +156,7 @@ bool httpPostHello(const char* host, uint16_t port, const char* path) {
 }
 
 bool httpPostHello(const IPAddress& ip, uint16_t port, const char* path) {
-  if (millis() - send_server < SEND_DATA_TO_SERVER) return;
-  send_server = millis();
+  if (!time_guard_allow(path, SEND_DATA_TO_SERVER)) return false;
 
   EthernetClient client;
   if (!client.connect(ip, port)) {
