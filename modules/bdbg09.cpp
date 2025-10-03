@@ -5,32 +5,73 @@ static uint8_t  bdbg_raw[10]   = {0};
 static uint8_t  bdbg_buf[20]   = {0};
 static uint8_t  bdbg_idx       = 0;
 static uint32_t bdbg_last_req  = 0;
-static uint32_t bdbg_reset_ts  = 0;
+static uint32_t bdbg_last_byte = 0;
+static uint32_t bdbg_first_deadline = 0;
+static bool     bdbg_waiting   = false;
 static bool     bdbg_has_data  = false;
+
+static void bdbg_print_hex(const uint8_t* p, size_t n) {
+  for (size_t i=0;i<n;i++){ if(p[i]<0x10) Serial.print('0'); Serial.print(p[i], HEX); Serial.print(' ');} Serial.println();
+}
 
 void bdbgPeriodicRequest() {
   if (millis() - bdbg_last_req >= BDBG_REQ_PERIOD_MS) {
+    const uint8_t cmd[] = {0x55, 0xAA, 0x01};
     Serial.println("Start BDBG-09");
 
+    // Schedule next window and prep RX
     bdbg_last_req = millis();
+    bdbg_idx = 0;
+    bdbg_has_data = false;
+    bdbg_waiting = true;
+
+    // Flush any stale bytes before TX
+    while (Serial2.available()) (void)Serial2.read();
+
+    // Drive line to TX, give DE time to enable
     digitalWrite(BDBG_DIR_PIN, HIGH);
-    while (Serial2.available()) Serial2.read();
-    const uint8_t cmd[] = {0x55, 0xAA, 0x01};
+    delayMicroseconds(300);
+
+    // Send command
     Serial2.write(cmd, sizeof(cmd));
     Serial2.flush();
+
+    // Ensure last bit is on the wire before switching to RX
+    delayMicroseconds(1200); // ~2 byte-times @19200
     digitalWrite(BDBG_DIR_PIN, LOW);
+
+    Serial.print("[TX] "); bdbg_print_hex(cmd, sizeof(cmd));
+
+    // Start timeouts
+    bdbg_first_deadline = millis() + BDBG_FIRST_BYTE_TIMEOUT_MS;
+    bdbg_last_byte = 0;
   }
 }
 
 void bdbgFeedByte(uint8_t b) {
-  bdbg_buf[bdbg_idx] = b;
-  if (bdbg_idx < sizeof(bdbg_buf) - 1) bdbg_idx++;
+  if (bdbg_idx < sizeof(bdbg_buf)) {
+    bdbg_buf[bdbg_idx++] = b;
+  }
   bdbg_has_data = true;
-  bdbg_reset_ts = millis();
+  bdbg_last_byte = millis();
 }
 
 void bdbgTryFinalizeFrame() {
-  if (bdbg_has_data && millis() - bdbg_reset_ts >= BDBG_REQ_PERIOD_MS) {
+  if (!bdbg_waiting) return;
+
+  uint32_t now = millis();
+  // First byte timeout
+  if (bdbg_idx == 0 && now >= bdbg_first_deadline) {
+    Serial.println("[BDBG] RX timeout (no first byte)");
+    bdbg_waiting = false;
+    return;
+  }
+
+  // Inter-byte timeout once something arrived
+  if (bdbg_idx > 0 && (now - bdbg_last_byte) >= BDBG_INTERBYTE_TIMEOUT_MS) {
+    Serial.print("[RX] "); Serial.print(bdbg_idx); Serial.println(" B");
+    bdbg_print_hex(bdbg_buf, bdbg_idx);
+
     if (bdbg_idx == 10) {
       for (uint8_t i = 0; i < 10; i++) bdbg_raw[i] = bdbg_buf[i];
       uint32_t raw = ((uint32_t)bdbg_raw[6] << 24) | ((uint32_t)bdbg_raw[5] << 16) |
@@ -39,7 +80,7 @@ void bdbgTryFinalizeFrame() {
     } else {
       Serial.print("BDBG: bad length="); Serial.println(bdbg_idx);
     }
-    bdbg_idx = 0; bdbg_has_data = false;
+    bdbg_idx = 0; bdbg_has_data = false; bdbg_waiting = false;
     Serial.println("Finish BDBG-09");
   }
 }

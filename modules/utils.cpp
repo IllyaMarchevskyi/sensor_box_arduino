@@ -186,10 +186,22 @@ void arrSumPeriodicUpdate() {
   acc_sum[20] += service_t[1];
   acc_sq_sum[20] += service_t[1] * service_t[1];
 
-    for (size_t i = 0; i < CH_COUNT; ++i) {
-    float value = INIT_SEND_ARR_0_13[i][tmp_id_value%6];
-    acc_sum[i] += value;  // double -> float ок
-    acc_sq_sum[i] += value * value;
+  //   for (size_t i = 0; i < CH_COUNT; ++i) {
+  //   float value = INIT_SEND_ARR_0_13[i][tmp_id_value%6];
+  //   acc_sum[i] += value;  // double -> float ок
+  //   acc_sq_sum[i] += value * value;
+  // }
+
+  for(int id=0; id<18; id++)
+  {
+    Serial.print(labels[id]);
+    Serial.print(": ");
+    Serial.print("acc_sum");
+    Serial.print('[');
+    Serial.print(id);
+    Serial.print("]=");
+    Serial.print(acc_sum[id]);
+    Serial.println(';');
   }
 }
 

@@ -101,6 +101,7 @@ bool pingId(uint8_t id) {
   if (!rs485_acquire(500)) return false;
   sensor_box.begin(id, Serial3);
   uint8_t res = sensor_box.readHoldingRegisters(20, 2);
+  Serial.print("ID answer -> "); Serial.println(id);
   Serial.print("pingId res=0x"); Serial.println(res, HEX);
   bool ok = (res == sensor_box.ku8MBSuccess);
   rs485_release();
@@ -230,6 +231,10 @@ void pollAllSensorBoxes(bool& alive1, bool& alive2, bool& alive3, bool& alive4) 
       // sensors_dec[4] = v[1]; // H2S
     } else if (id == 2) {
       if (!read3Floats(id, v, GAS_START_ADDR, GAS_REG_COUNT)) continue;
+      Serial.print("ID: "); Serial.println(id);
+      Serial.print("O3 "); Serial.println(v[0]);
+      Serial.print("NO "); Serial.println(v[1]);
+      Serial.print("H2S "); Serial.println(v[2]);
       sensors_dec[5] = v[0]; // O3
       sensors_dec[3] = v[1]; // NO
       sensors_dec[4] = v[2]; // H2S
@@ -238,24 +243,39 @@ void pollAllSensorBoxes(bool& alive1, bool& alive2, bool& alive3, bool& alive4) 
       uint8_t REQ[12] = {0};
       size_t len = buildMbTcpRead03(REQ, 0, /*id*/id, /*addr*/0x0031, /*qty*/2);
       sendHexTCP(v, ip_3, port, REQ, len, time_sleep);
+      Serial.print("ID: "); Serial.println(id);
+      Serial.print("CO "); Serial.println(v[0]);
       sensors_dec[0] = v[0]; // CO
     } else if (id == 4) {
       uint8_t REQ[12] = {0};
       size_t len = buildMbTcpRead03(REQ, 0, /*id*/id, /*addr*/0x0031, /*qty*/2);
       sendHexTCP(v, ip_4, port, REQ, len, time_sleep);
+      Serial.print("CO "); Serial.println(v[0]);
       sensors_dec[0] = v[0]; // CO
     } else if (id == 5) {
       if (!read3Floats(id, v, GAS_START_ADDR, GAS_REG_COUNT)) continue;
+      Serial.print("ID: "); Serial.println(id);
+      Serial.print("CO "); Serial.println(v[0]);
+      Serial.print("NO2 "); Serial.println(v[1]);
+      Serial.print("SO2 "); Serial.println(v[2]);
       sensors_dec[0] = v[0]; // CO
       sensors_dec[2] = v[1]; // NO2
       sensors_dec[1] = v[2]; // SO2
     } else if (id == 6) {
       if (!read3Floats(id, v, GAS_START_ADDR, GAS_REG_COUNT)) continue;
+      Serial.print("ID: "); Serial.println(id);
+      Serial.print("O3 "); Serial.println(v[0]);
+      Serial.print("NO "); Serial.println(v[1]);
+      Serial.print("H2S "); Serial.println(v[2]);
       sensors_dec[5] = v[0]; // O3
       sensors_dec[3] = v[1]; // NO
       sensors_dec[4] = v[2]; // H2S
     } else if (id == 7) {
       if (!read3Floats(id, v, GAS_START_ADDR, GAS_REG_COUNT)) continue;
+      Serial.print("ID: "); Serial.println(id);
+      Serial.print("O3 "); Serial.println(v[0]);
+      Serial.print("NH3 "); Serial.println(v[1]);
+      Serial.print("H2S "); Serial.println(v[2]);
       sensors_dec[5] = v[0]; // O3
       sensors_dec[6] = v[1]; // NH3
       sensors_dec[4] = v[2]; // H2S
@@ -270,9 +290,13 @@ void pollAllSensorBoxes(bool& alive1, bool& alive2, bool& alive3, bool& alive4) 
       NO2 = v[0];
       len = buildMbTcpRead03(REQ, 0, /*id*/id, /*addr*/0x00b7, /*qty*/2);
       sendHexTCP(v, ip_8, port, REQ, len, time_sleep);
+      Serial.print("ID: "); Serial.println(id);
+      Serial.print("NO "); Serial.println(NO);
+      Serial.print("NO2 "); Serial.println(NO2);
+      Serial.print("NH3 "); Serial.println(v[0]);
       sensors_dec[3] = NO;   // NO
       sensors_dec[2] = NO2;  // NO2
-      sensors_dec[6] = v[0]; // NH3
+      sensors_dec[6] = v[0]; // NH3 
     }
   }
 

@@ -76,6 +76,10 @@ constexpr uint32_t RELAY_SLEEP = 600UL * 1000UL; // sec
 constexpr int   SEND_ARR_SIZE    = 30;   // number of float32 values exposed (2 regs each)
 constexpr float DEFAULT_SEND_VAL = -1.0f;
 
+// ---------- BDBG-09 UART Timings ----------
+constexpr uint32_t BDBG_FIRST_BYTE_TIMEOUT_MS  = 500;
+constexpr uint32_t BDBG_INTERBYTE_TIMEOUT_MS   = 50;
+
 // Channel labels
 const char* const labels[] = {
   "CO",  "SO2",  "NO2",  "NO",
