@@ -53,7 +53,8 @@ static const IPAddress DNS_IP(192, 168, 0, 1);
 uint8_t resp[256];
 
 // Remote Server
-static const IPAddress SERVER_IP(192, 168, 0, 102);
+// static const IPAddress SERVER_IP(192, 168, 0, 102);
+static const char* SERVER_IP = "example.com";
 uint16_t server_port = 4000;
 const char API_KEY[] = "4f9...f4a";
 
@@ -63,6 +64,11 @@ IPAddress   NET_CHECK_IP(8, 8, 8, 8);
 const uint16_t NET_CHECK_PORT = 53;
 const uint8_t  UNIT_ID        = 12; //
 const uint8_t  CH             = 0;  //
+
+
+// ---------- BDBG-09 UART Timings ----------
+constexpr uint32_t BDBG_FIRST_BYTE_TIMEOUT_MS  = 500;
+constexpr uint32_t BDBG_INTERBYTE_TIMEOUT_MS   = 50;
 
 // ---------- Periods / Timings (ms) ----------
 constexpr uint32_t TFT_REFRESH_MS        = 60UL * 1000UL; // sec

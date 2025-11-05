@@ -2,6 +2,7 @@
 #include <Ethernet.h>
 #include <utility/w5100.h>
 #include <string.h>
+#include <EEPROM.h>
 
 // 'server' defined in modules/EthernetModbus.cpp
 extern EthernetServer server;
@@ -45,6 +46,21 @@ static size_t buildSensorsJson18(char* out, size_t maxLen) {
   extern const char* const labels[];   // from Config.h
   const int values_number = 19;
 
+  // Read 4-byte ID from EEPROM and format as AA:BB:CC:DD
+  auto hx = [](uint8_t v) -> char { return (v < 10) ? (char)('0' + v) : (char)('A' + (v - 10)); };
+  char idBuf[12]; // "AA:BB:CC:DD" + null
+  {
+    uint8_t b[4];
+    for (int i = 0; i < 4; ++i) b[i] = EEPROM.read(i);
+    int p = 0;
+    for (int i = 0; i < 4; ++i) {
+      if (i) idBuf[p++] = ':';
+      idBuf[p++] = hx(b[i] >> 4);
+      idBuf[p++] = hx(b[i] & 0x0F);
+    }
+    idBuf[p] = '\0';
+  }
+
   size_t pos = 0;
   auto emit = [&](const char* s) {
     size_t n = strlen(s);
@@ -53,7 +69,7 @@ static size_t buildSensorsJson18(char* out, size_t maxLen) {
   };
 
   emit("{");
-  emit("\""); emit("id"); emit("\":"); emit("2"); emit(",");
+  emit("\""); emit("id"); emit("\":\""); emit(idBuf); emit("\",");
   for (int i = 0; i < values_number; ++i) {
     // Key
     emit("\""); emit(labels[i]); emit("\":");

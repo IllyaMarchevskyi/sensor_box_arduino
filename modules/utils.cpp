@@ -192,17 +192,17 @@ void arrSumPeriodicUpdate() {
   //   acc_sq_sum[i] += value * value;
   // }
 
-  for(int id=0; id<18; id++)
-  {
-    Serial.print(labels[id]);
-    Serial.print(": ");
-    Serial.print("acc_sum");
-    Serial.print('[');
-    Serial.print(id);
-    Serial.print("]=");
-    Serial.print(acc_sum[id]);
-    Serial.println(';');
-  }
+  // for(int id=0; id<18; id++)
+  // {
+  //   Serial.print(labels[id]);
+  //   Serial.print(": ");
+  //   Serial.print("acc_sum");
+  //   Serial.print('[');
+  //   Serial.print(id);
+  //   Serial.print("]=");
+  //   Serial.print(acc_sum[id]);
+  //   Serial.println(';');
+  // }
 }
 
 // ============================== send_arr Maintenance ========================
@@ -236,9 +236,6 @@ void collectAndAverageEveryMinute() {
       send_arr[index] = tmp; // середнє за хвилину
       
       if (index < labels_len - CH_COUNT) {
-        Serial.print("N: "); Serial.println(SAMPLES_PER_MIN);
-        Serial.print("H: "); Serial.println(tmp*tmp);
-        Serial.print("ix^2"); Serial.println(acc_sq_sum[index]);
         float tmp2 = (acc_sq_sum[index]-SAMPLES_PER_MIN*tmp*tmp)/(SAMPLES_PER_MIN-1);
         if (tmp2 < 0.0f) tmp2 = 0.0f;
         send_arr[CH_COUNT+index] = sqrtf(tmp2);

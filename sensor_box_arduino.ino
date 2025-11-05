@@ -4,7 +4,7 @@
     - TFT (TFT_eSPI / ST7796)
     - Meteo (Serial1 9600 8N1, 17-byte frame)
     - BDBG-09 (Serial2 19200 8N1, cmd 55 AA 01 → 10 bytes)
-    - Sensor Box (RS-485 Modbus RTU on Serial3 8E1): CO/SO2/NO2 as float, start 20, len 6
+    - Sensor Box (RS-485 Modbus RTU on Serial3 ): CO/SO2/NO2 as float, start 20, len 6
     - Modbus TCP (ENC28J60) exposes send_arr[] as float32 (2 regs/value)
 
   This main keeps logic readable; all constants live in EnvStationConfig.h
@@ -54,41 +54,40 @@ void setup() {
   sensor_box.preTransmission(pre_transmission_main);
   sensor_box.postTransmission(post_transmission_main);
 
-  Serial.println("start - Arsenii'sTechnologies");
   initEthernet();
 }
 void loop() {
   bool alive2=false, alive4=false, alive6=false, alive7=false;
   uint32_t t1 = millis();
 
-  // if(millis() - main_timer >= 1000){
-  //   main_timer = millis();
-  //   // SERViSE Temperature
-  //   TIME_CALL("Service t and rh", readTH_ID10(service_t));
+  if(millis() - main_timer >= 1000){
+    main_timer = millis();
+    // SERViSE Temperature
+    TIME_CALL("Service t and rh", readTH_ID10(service_t));
     
-  //   // Sensor Box
-  //   TIME_CALL("Sensor Box", pollAllSensorBoxes(alive2, alive4, alive6, alive7));
+    // Sensor Box
+    // TIME_CALL("Sensor Box", pollAllSensorBoxes(alive2, alive4, alive6, alive7));
 
-  // }
+  }
 
-  // // BDBG-09
-  // if (!alive4){
-  // bdbgPeriodicRequest();
-  // while (Serial2.available()) { bdbgFeedByte(Serial2.read()); }
-  // bdbgTryFinalizeFrame();
-  // }
+  BDBG-09
+  if (!alive4){
+  bdbgPeriodicRequest();
+  while (Serial2.available()) { bdbgFeedByte(Serial2.read()); }
+  bdbgTryFinalizeFrame();
+  }
 
   // // Meteo
   // if (!alive4){
   // while (Serial1.available()) { meteoFeedByte(Serial1.read()); }
   // meteoTryFinalizeFrame();
-  // }
+  // // }
 
   TIME_CALL("Work with data", collectAndAverageEveryMinute());
-  TIME_CALL("Modbus connect", modbusTcpServiceOnce());
-  // TIME_CALL("Drawing value on arduino", drawOnlyValue());
+  // TIME_CALL("Modbus connect", modbusTcpServiceOnce());
+  TIME_CALL("Drawing value on arduino", drawOnlyValue());
   TIME_CALL("Ralay", ensureNetOrRebootPort0());
-  TIME_CALL("Send to Server1", httpPostSensors(SERVER_IP, server_port, "/ingest"));
+  // TIME_CALL("Send to Server1", httpPostSensors(SERVER_IP, server_port, "/ingest"));
   // TIME_CALL("Send to Server", httpPostHello(SERVER_IP, 4000, "/test"));
   uint32_t dt_ms = millis() - t1;
   if (dt_ms > 500) {Serial.print("Час: "); Serial.print(dt_ms); Serial.println(" ms");}
