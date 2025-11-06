@@ -20,12 +20,50 @@ bool httpPostSensors(const IPAddress& ip, uint16_t port, const char* path);
 bool httpPostHello(const char* host, uint16_t port, const char* path);
 bool httpPostHello(const IPAddress& ip, uint16_t port, const char* path);
 
+// Forward declaration from unique_id.ino
+String uniqueIdString();
+
+static bool loadMacFromEeprom(uint8_t mac[6]) {
+  // Try to read 6-byte MAC from UNIQUE_ID_ADDR=0
+  bool allFF = true, all00 = true;
+  for (int i = 0; i < 6; ++i) {
+    mac[i] = EEPROM.read(0 + i);
+    if (mac[i] != 0xFF) allFF = false;
+    if (mac[i] != 0x00) all00 = false;
+  }
+  auto valid = [](const uint8_t* m){
+    if (m[0] & 0x01) return false; // must be unicast
+    return true;
+  };
+  if (!allFF && !all00 && valid(mac)) return true;
+
+  // Legacy 4-byte ID fallback at the same address range
+  uint8_t id4[4];
+  bool id4_ff = true;
+  for (int i = 0; i < 4; ++i) { id4[i] = EEPROM.read(0 + i); if (id4[i] != 0xFF) id4_ff = false; }
+  if (!id4_ff) {
+    uint8_t s = id4[0] ^ id4[1] ^ id4[2] ^ id4[3];
+    mac[0] = 0x02;      // locally administered, unicast
+    mac[1] = s;
+    mac[2] = id4[0];
+    mac[3] = id4[1];
+    mac[4] = id4[2];
+    mac[5] = id4[3];
+    return true;
+  }
+  return false;
+}
+
 void initEthernet() {
   Ethernet.init(ETH_CS);
-  
-  if (Ethernet.begin(const_cast<byte*>(MAC_ADDR)) == 0) {
+  uint8_t mac[6];
+  if (!loadMacFromEeprom(mac)) {
+    // Fallback to default MAC from Config.h when EEPROM contains 00.. or FF..
+    memcpy(mac, MAC_ADDR, 6);
+  }
+  if (Ethernet.begin(mac) == 0) {
     Serial.println("DHCP failed. Using static IP.");
-    Ethernet.begin(const_cast<byte*>(MAC_ADDR), STATIC_IP, DNS_IP);
+    Ethernet.begin(mac, STATIC_IP, DNS_IP);
   }
   server.begin();
   Serial.print("Modbus server on ");
@@ -38,28 +76,21 @@ void initEthernet() {
 
 // ============================ HTTP POST helpers ============================
 
-// Builds JSON for the first 18 labels (CO..PRES) using send_arr[] values.
+// Builds JSON for current labels[] using send_arr[] values.
 // Returns payload length written to out (without null terminator).
-static size_t buildSensorsJson18(char* out, size_t maxLen) {
+static size_t buildSensorsJson(char* out, size_t maxLen) {
   // send_arr[] and labels[] are defined in the main TU and included before this file
   extern double send_arr[];            // from sensor_box_arduino.ino
   extern const char* const labels[];   // from Config.h
-  const int values_number = 19;
+  extern const size_t labels_len;      // from Config.h
+  size_t values_number = labels_len;
+  if (values_number > SEND_ARR_SIZE) values_number = SEND_ARR_SIZE;
 
-  // Read 4-byte ID from EEPROM and format as AA:BB:CC:DD
-  auto hx = [](uint8_t v) -> char { return (v < 10) ? (char)('0' + v) : (char)('A' + (v - 10)); };
-  char idBuf[12]; // "AA:BB:CC:DD" + null
-  {
-    uint8_t b[4];
-    for (int i = 0; i < 4; ++i) b[i] = EEPROM.read(i);
-    int p = 0;
-    for (int i = 0; i < 4; ++i) {
-      if (i) idBuf[p++] = ':';
-      idBuf[p++] = hx(b[i] >> 4);
-      idBuf[p++] = hx(b[i] & 0x0F);
-    }
-    idBuf[p] = '\0';
-  }
+  // Use uniqueIdString() (6-byte MAC-like) for the device id field
+  String idStr = uniqueIdString();
+  char idBuf[24];
+  strncpy(idBuf, idStr.c_str(), sizeof(idBuf));
+  idBuf[sizeof(idBuf)-1] = '\0';
 
   size_t pos = 0;
   auto emit = [&](const char* s) {
@@ -69,17 +100,26 @@ static size_t buildSensorsJson18(char* out, size_t maxLen) {
   };
 
   emit("{");
-  emit("\""); emit("id"); emit("\":\""); emit(idBuf); emit("\",");
-  for (int i = 0; i < values_number; ++i) {
+  // Always include device id first, without trailing comma
+  emit("\""); emit("id"); emit("\":\""); emit(idBuf); emit("\"");
+
+  // Add sensor values, skipping service keys (S_*), including S_T, S_RH
+  bool first = false; // we already wrote one key (id)
+  for (size_t i = 0; i < values_number; ++i) {
+    const char* key = labels[i];
+    if (!key) continue;
+    if (key[0] == 'S' && key[1] == '_') continue; // skip S_* keys
+
+    // Append comma before next key
+    emit(",");
     // Key
-    emit("\""); emit(labels[i]); emit("\":");
+    emit("\""); emit(key); emit("\":");
     // Value (as number). On AVR, use dtostrf to format float/double reliably.
     char num[24];
     dtostrf(send_arr[i], 0, 3, num); // 3 decimals; width 0 to avoid left padding
     // Trim leading spaces if any implementation pads
     char* p = num; while (*p == ' ') ++p;
     emit(p);
-    if (i != values_number-1) emit(",");
   }
   emit("}");
   if (pos < maxLen) out[pos] = '\0';
@@ -126,7 +166,7 @@ static bool httpPostSensorsImpl(EthernetClient &client,
                                 const char* hostHeader, const char* path,
                                 uint16_t timeoutMs = 2000) {
   char body[768];
-  size_t bodyLen = buildSensorsJson18(body, sizeof(body) - 1);
+  size_t bodyLen = buildSensorsJson(body, sizeof(body) - 1);
   return httpPostBody(client, hostHeader, path, body, bodyLen, timeoutMs);
 }
 

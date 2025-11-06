@@ -2,7 +2,7 @@
   Environmental Station — Refactored Main
   Modules:
     - TFT (TFT_eSPI / ST7796)
-    - Meteo (Serial1 9600 8N1, 17-byte frame)
+    - (Removed) Meteo (was on Serial1)
     - BDBG-09 (Serial2 19200 8N1, cmd 55 AA 01 → 10 bytes)
     - Sensor Box (RS-485 Modbus RTU on Serial3 ): CO/SO2/NO2 as float, start 20, len 6
     - Modbus TCP (ENC28J60) exposes send_arr[] as float32 (2 regs/value)
@@ -17,9 +17,9 @@
 #include <math.h>
 #include "Config.h"
 
+
 static double   send_arr[SEND_ARR_SIZE + 1] = {0};
 static float    sensors_dec[9]              = {0};  // [CO, SO2, NO2, NO, H2S, O3, NH3, PM_2.5, PM_10]
-double          meteo_dec[9]                = {0};  //
 static float    radiation_uSvh              = 0.0f; //
 static float    service_t[2]                = {0};  // temperature, dampness
 
@@ -32,14 +32,13 @@ static uint32_t main_timer           = 0;
 #include "modules/display.cpp"
 #include "modules/ethernet.cpp"
 #include "modules/ethernet_modbus.cpp"
-#include "modules/meteo.cpp"
 #include "modules/bdbg09.cpp"
 
 
 
 // ================================== SETUP ==================================
 
-void setup() {
+void setup() {О
   for (int i = 0; i < SEND_ARR_SIZE; i++) send_arr[i] = DEFAULT_SEND_VAL;
 
   initDisplay();
@@ -66,29 +65,22 @@ void loop() {
     TIME_CALL("Service t and rh", readTH_ID10(service_t));
     
     // Sensor Box
-    // TIME_CALL("Sensor Box", pollAllSensorBoxes(alive2, alive4, alive6, alive7));
+    TIME_CALL("Sensor Box", pollAllSensorBoxes(alive2, alive4, alive6, alive7));
 
   }
 
-  BDBG-09
+  // BDBG-09
   if (!alive4){
   bdbgPeriodicRequest();
   while (Serial2.available()) { bdbgFeedByte(Serial2.read()); }
   bdbgTryFinalizeFrame();
   }
 
-  // // Meteo
-  // if (!alive4){
-  // while (Serial1.available()) { meteoFeedByte(Serial1.read()); }
-  // meteoTryFinalizeFrame();
-  // // }
-
   TIME_CALL("Work with data", collectAndAverageEveryMinute());
-  // TIME_CALL("Modbus connect", modbusTcpServiceOnce());
+  TIME_CALL("Modbus connect", modbusTcpServiceOnce());
   TIME_CALL("Drawing value on arduino", drawOnlyValue());
   TIME_CALL("Ralay", ensureNetOrRebootPort0());
-  // TIME_CALL("Send to Server1", httpPostSensors(SERVER_IP, server_port, "/ingest"));
-  // TIME_CALL("Send to Server", httpPostHello(SERVER_IP, 4000, "/test"));
+  TIME_CALL("Send to Server1", httpPostSensors(SERVER_IP, server_port, "/ingest"));
   uint32_t dt_ms = millis() - t1;
   if (dt_ms > 500) {Serial.print("Час: "); Serial.print(dt_ms); Serial.println(" ms");}
 
@@ -97,9 +89,6 @@ void loop() {
 // =============================== Initialization ============================
 
 void initSerials() {
-  Serial1.begin(SERIAL1_BAUD);                // Meteo 8N1
-  Serial1.setTimeout(10);
-
   Serial2.begin(SERIAL2_BAUD);                // BDBG 8N1
   Serial2.setTimeout(10);
 

@@ -1,12 +1,13 @@
 #include <Arduino.h>
 #include <string.h>
 
-constexpr size_t CH_COUNT     = 21;
+// With meteo removed: 9 sensors + 1 radiation + 2 service
+constexpr size_t CH_COUNT     = 12;
 int tmp_id_value              = 0;
 static uint16_t acc_count            = 0;
 
-static float    acc_sum[21] = {0};
-static float    acc_sq_sum[21] = {0};
+static float    acc_sum[CH_COUNT] = {0};
+static float    acc_sq_sum[CH_COUNT] = {0};
 constexpr uint8_t SAMPLES_PER_MIN    = 60;
 
 volatile bool g_rs485_busy = false;
@@ -147,44 +148,16 @@ void arrSumPeriodicUpdate() {
   acc_sum[8]  += sensors_dec[8]; // PM_10
   acc_sq_sum[8] += sensors_dec[8] * sensors_dec[8];
 
-  // Метео-дані
-  acc_sum[9]  += meteo_dec[0]; // Wind direction
-  acc_sq_sum[9] += meteo_dec[0] * meteo_dec[0];
+  // Radiation and service (no meteo)
+  acc_sum[9]  += radiation_uSvh;
+  acc_sq_sum[9] += radiation_uSvh * radiation_uSvh;
 
-  acc_sum[10] += meteo_dec[1]; // Temperature
-  acc_sq_sum[10] += meteo_dec[1] * meteo_dec[1];
+  acc_sum[10] += service_t[0];
+  acc_sq_sum[10] += service_t[0] * service_t[0];
 
-  acc_sum[11] += meteo_dec[2]; // Humidity (RH)
-  acc_sq_sum[11] += meteo_dec[2] * meteo_dec[2];
+  acc_sum[11] += service_t[1];
+  acc_sq_sum[11] += service_t[1] * service_t[1];
 
-  acc_sum[12] += meteo_dec[3]; // Wind speed
-  acc_sq_sum[12] += meteo_dec[3] * meteo_dec[3];
-
-  acc_sum[13] += meteo_dec[4]; // Gust
-  acc_sq_sum[13] += meteo_dec[4] * meteo_dec[4];
-
-  acc_sum[14] += meteo_dec[5]; // Rainfall
-  acc_sq_sum[14] += meteo_dec[5] * meteo_dec[5];
-
-  acc_sum[15] += meteo_dec[6]; // UV index
-  acc_sq_sum[15] += meteo_dec[6] * meteo_dec[6];
-
-  acc_sum[16] += meteo_dec[7]; // Light
-  acc_sq_sum[16] += meteo_dec[7] * meteo_dec[7];
-
-  acc_sum[17] += meteo_dec[8]; // Pressure
-  acc_sq_sum[17] += meteo_dec[8] * meteo_dec[8];
-
-  // Радіація
-  acc_sum[18] += radiation_uSvh;
-  acc_sq_sum[18] += radiation_uSvh * radiation_uSvh;
-
-  // Температура всередині пристрою 
-  acc_sum[19] += service_t[0];
-  acc_sq_sum[19] += service_t[0] * service_t[0];
-
-  acc_sum[20] += service_t[1];
-  acc_sq_sum[20] += service_t[1] * service_t[1];
 
   //   for (size_t i = 0; i < CH_COUNT; ++i) {
   //   float value = INIT_SEND_ARR_0_13[i][tmp_id_value%6];
@@ -192,7 +165,7 @@ void arrSumPeriodicUpdate() {
   //   acc_sq_sum[i] += value * value;
   // }
 
-  // for(int id=0; id<18; id++)
+  // for(int id=0; id<labels_len; id++)
   // {
   //   Serial.print(labels[id]);
   //   Serial.print(": ");

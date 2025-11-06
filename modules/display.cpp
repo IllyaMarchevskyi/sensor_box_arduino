@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <TFT_eSPI.h>
+#include <EEPROM.h>
 
 // Moved from Globals.h (module-specific)
 TFT_eSPI tft;
@@ -10,8 +11,6 @@ bool time_guard_allow(const char* key, uint32_t interval_ms);
 // Forward declaration from unique_id.ino
 String uniqueIdString();
 
-const int col1_x = 0, col1_x_value = 80, col2_x = 170, col2_x_value = 240, col3_x = 330, col3_x_value = 410, y_step = 30;
-const int len_col = 10;
 static float prev_send_arr[31] = {0};
 const int len_prev_send_arr = sizeof(prev_send_arr)/sizeof(prev_send_arr[0]);
 
@@ -71,6 +70,27 @@ void drawOnlyValue() {
 }
 
 // Draw bottom-left HEX ID from EEPROM and bottom-right VERSION
+static bool eepromMacInvalid() {
+  bool allFF = true, all00 = true;
+  for (int i = 0; i < 6; ++i) {
+    uint8_t b = EEPROM.read(0 + i);
+    if (b != 0xFF) allFF = false;
+    if (b != 0x00) all00 = false;
+  }
+  return (allFF || all00);
+}
+
+static String macToString(const uint8_t mac[6]) {
+  auto hx = [](uint8_t v) { return (char)((v < 10) ? ('0' + v) : ('A' + (v - 10))); };
+  String s; s.reserve(17);
+  for (int i = 0; i < 6; ++i) {
+    if (i) s += ':';
+    s += hx(mac[i] >> 4);
+    s += hx(mac[i] & 0x0F);
+  }
+  return s;
+}
+
 static void drawFooter() {
   const int h = tft.height();
   const int w = tft.width();
@@ -81,8 +101,17 @@ static void drawFooter() {
 
   // Left bottom: label + HEX ID (as MAC-like)
   tft.setTextDatum(BL_DATUM);
-  String hexId = uniqueIdString();
-  tft.drawString(String("MAC: ") + hexId, 2, h - 1);
+  String label;
+  String value;
+  if (eepromMacInvalid()) {
+    // EEPROM has 00.. or FF.. -> show default MAC and label MAC_DEF
+    label = "MAC_DEF: ";
+    value = macToString(MAC_ADDR);
+  } else {
+    label = "MAC: ";
+    value = uniqueIdString();
+  }
+  tft.drawString(label + value, 2, h - 1);
 
   // Right bottom: VERSION from Config.h
   tft.setTextDatum(BR_DATUM);

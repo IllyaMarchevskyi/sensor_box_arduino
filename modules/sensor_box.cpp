@@ -1,8 +1,7 @@
 #include <ModbusMaster.h>
 #include <Ethernet.h>
 
-// Access to meteo data (if needed by mappings)
-extern double meteo_dec[9];
+// Meteo data removed: no external meteo_dec usage
 
 // RS-485 arbitration helpers (defined in modules/utils.cpp)
 extern bool rs485_acquire(uint16_t timeout_ms);
@@ -205,10 +204,10 @@ void pollAllSensorBoxes(bool& alive1, bool& alive2, bool& alive3, bool& alive4) 
     else if (id==PRIMARY_IDS[3]) alive4 = ok;
   }
 
-  Serial.print("ID2: "); Serial.print(alive1); Serial.print(" | ");
-  Serial.print("ID4: "); Serial.print(alive2); Serial.print(" | ");
-  Serial.print("ID6: "); Serial.print(alive3); Serial.print(" | ");
-  Serial.print("ID7: "); Serial.println(alive4); Serial.print(" | ");
+  Serial.print("ID");  Serial.print(PRIMARY_IDS[0]); Serial.print(": "); Serial.print(alive1); Serial.print(" | ");
+  Serial.print("ID");  Serial.print(PRIMARY_IDS[1]); Serial.print(": "); Serial.print(alive2); Serial.print(" | ");
+  Serial.print("ID");  Serial.print(PRIMARY_IDS[2]); Serial.print(": "); Serial.print(alive3); Serial.print(" | ");
+  Serial.print("ID");  Serial.print(PRIMARY_IDS[3]); Serial.print(": "); Serial.println(alive4); 
 
   // 2) Build list of additional IDs to poll
   uint8_t toPoll[7] = {0}; 
@@ -223,13 +222,7 @@ void pollAllSensorBoxes(bool& alive1, bool& alive2, bool& alive3, bool& alive4) 
     uint8_t id = toPoll[i];
     float v[4] = {0};
 
-    if (id == 1) {
-      // uint8_t REQ[12] = {0};
-      // size_t len = buildMbTcpRead03(REQ, 0, /*id*/id, /*addr*/0x0032, /*qty*/4);
-      // sendHexTCP(v, ip_4, port, REQ, len, time_sleep);
-      // sensors_dec[1] = v[0]; // SO2
-      // sensors_dec[4] = v[1]; // H2S
-    } else if (id == 2) {
+  if (id == 2) {
       if (!read3Floats(id, v, GAS_START_ADDR, GAS_REG_COUNT)) continue;
       Serial.print("ID: "); Serial.println(id);
       Serial.print("O3 "); Serial.println(v[0]);
@@ -241,10 +234,11 @@ void pollAllSensorBoxes(bool& alive1, bool& alive2, bool& alive3, bool& alive4) 
       // sensors_dec[4] = v[3]; // H2S
     } else if (id == 3) {
       uint8_t REQ[12] = {0};
-      size_t len = buildMbTcpRead03(REQ, 0, /*id*/id, /*addr*/0x0031, /*qty*/2);
+      size_t len = buildMbTcpRead03(REQ, 0, /*id*/id, /*addr*/0x0031, /*qty*/4);
       sendHexTCP(v, ip_3, port, REQ, len, time_sleep);
       Serial.print("ID: "); Serial.println(id);
-      Serial.print("CO "); Serial.println(v[0]);
+      Serial.print("SO2 "); Serial.println(v[0]);
+      Serial.print("H2S "); Serial.println(v[1]);
       sensors_dec[0] = v[0]; // CO
     } else if (id == 4) {
       uint8_t REQ[12] = {0};
@@ -300,10 +294,10 @@ void pollAllSensorBoxes(bool& alive1, bool& alive2, bool& alive3, bool& alive4) 
     }
   }
 
-  // 4) PM via ID10
-  float pm25=0, pm10=0;
-  if (read2Floats(PM_ID, PM_START_ADDR, pm25, pm10)) {
-    sensors_dec[7] = pm25;
-    sensors_dec[8] = pm10;
-  }
+  // // 4) PM via ID10
+  // float pm25=0, pm10=0;
+  // if (read2Floats(PM_ID, PM_START_ADDR, pm25, pm10)) {
+  //   sensors_dec[7] = pm25;
+  //   sensors_dec[8] = pm10;
+  // }
 }
