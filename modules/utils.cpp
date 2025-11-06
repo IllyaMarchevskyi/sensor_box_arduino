@@ -159,11 +159,11 @@ void arrSumPeriodicUpdate() {
   acc_sq_sum[11] += service_t[1] * service_t[1];
 
 
-  //   for (size_t i = 0; i < CH_COUNT; ++i) {
-  //   float value = INIT_SEND_ARR_0_13[i][tmp_id_value%6];
-  //   acc_sum[i] += value;  // double -> float ок
-  //   acc_sq_sum[i] += value * value;
-  // }
+    for (size_t i = 0; i < CH_COUNT; ++i) {
+    float value = INIT_SEND_ARR_0_13[i][tmp_id_value%6];
+    acc_sum[i] += value;  // double -> float ок
+    acc_sq_sum[i] += value * value;
+  }
 
   // for(int id=0; id<labels_len; id++)
   // {

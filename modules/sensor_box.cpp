@@ -136,7 +136,20 @@ bool read2Floats(uint8_t id, uint16_t startAddr, float &f0, float &f1) {
   return true;
 }
 
-void readTH_ID10(float* mass) {
+bool readPM(uint8_t id, uint16_t startAddr, float &f0, float &f1) {
+  if (!rs485_acquire(500)) return false;
+  sensor_box.begin(id, Serial3);
+  uint8_t res = sensor_box.readHoldingRegisters(startAddr, 2);
+  if (res != sensor_box.ku8MBSuccess) { rs485_release(); return false; }
+  uint16_t hi0 = sensor_box.getResponseBuffer(0);
+  uint16_t hi1 = sensor_box.getResponseBuffer(1);
+  f0 = hi0;
+  f1 = hi1;
+  rs485_release();
+  return true;
+}
+
+void read_TEMP_RH_ID10(float* mass) {
   if (!rs485_acquire(500)) return;
   sensor_box.begin(11, Serial3);
   uint8_t res = sensor_box.readHoldingRegisters(0x0000, 2);
@@ -294,10 +307,15 @@ void pollAllSensorBoxes(bool& alive1, bool& alive2, bool& alive3, bool& alive4) 
     }
   }
 
-  // // 4) PM via ID10
-  // float pm25=0, pm10=0;
-  // if (read2Floats(PM_ID, PM_START_ADDR, pm25, pm10)) {
-  //   sensors_dec[7] = pm25;
-  //   sensors_dec[8] = pm10;
-  // }
+  // 4) PM via ID10
+  float pm25=0, pm10=0;
+  if (readPM(PM_ID, PM_START_ADDR, pm25, pm10)) {
+    int divider = 1;
+    Serial.print("PM25 "); Serial.println(pm25 / divider);
+    Serial.print("PM10 "); Serial.println(pm10 / divider);
+    sensors_dec[7] = pm25 / divider;
+    sensors_dec[8] = pm10 / divider;
+  } else{
+    Serial.println("Not Found PM25, PM10");
+  }
 }

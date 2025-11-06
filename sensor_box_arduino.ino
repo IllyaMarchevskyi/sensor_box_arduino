@@ -1,15 +1,18 @@
+
+//######### VERSION #########
+#define VERSION "1.0.1"
+//###########################
+
 /*
   Environmental Station — Refactored Main
   Modules:
     - TFT (TFT_eSPI / ST7796)
-    - (Removed) Meteo (was on Serial1)
     - BDBG-09 (Serial2 19200 8N1, cmd 55 AA 01 → 10 bytes)
     - Sensor Box (RS-485 Modbus RTU on Serial3 ): CO/SO2/NO2 as float, start 20, len 6
     - Modbus TCP (ENC28J60) exposes send_arr[] as float32 (2 regs/value)
 
   This main keeps logic readable; all constants live in EnvStationConfig.h
 */
-// #include <ModbusMaster.h>
 
 #include <SPI.h>
 #include <TFT_eSPI.h>
@@ -62,7 +65,7 @@ void loop() {
   if(millis() - main_timer >= 1000){
     main_timer = millis();
     // SERViSE Temperature
-    TIME_CALL("Service t and rh", readTH_ID10(service_t));
+    TIME_CALL("Service t and rh", read_TEMP_RH_ID10(service_t));
     
     // Sensor Box
     TIME_CALL("Sensor Box", pollAllSensorBoxes(alive2, alive4, alive6, alive7));
