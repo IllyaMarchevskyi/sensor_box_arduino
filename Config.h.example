@@ -83,7 +83,6 @@ constexpr uint32_t RELAY_SLEEP = 1 * MIN; // хв
 constexpr uint32_t SEND_DATA_TO_SERVER = 1 * MIN; // хв
  
 
-
 // ---------- Exported Data Array ----------
 constexpr int   SEND_ARR_SIZE    = 30;   // number of float32 values exposed (2 regs each)
 constexpr float DEFAULT_SEND_VAL = -1.0f;
