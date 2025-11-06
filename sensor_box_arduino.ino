@@ -38,7 +38,7 @@ static uint32_t main_timer           = 0;
 
 // ================================== SETUP ==================================
 
-void setup() {О
+void setup() {
   for (int i = 0; i < SEND_ARR_SIZE; i++) send_arr[i] = DEFAULT_SEND_VAL;
 
   initDisplay();

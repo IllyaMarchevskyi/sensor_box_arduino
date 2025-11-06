@@ -11,7 +11,7 @@
 #define SEC 1000UL
 
 // VERSION
-#define VERSION "1.0"
+#define VERSION "1.0.0"
 
 // ---------- Pins ----------
 constexpr uint8_t RS485_DIR_PIN = 5;  // DE/RE for RS-485 (Sensor Box)
