@@ -20,8 +20,24 @@ bool httpPostSensors(const IPAddress& ip, uint16_t port, const char* path);
 bool httpPostHello(const char* host, uint16_t port, const char* path);
 bool httpPostHello(const IPAddress& ip, uint16_t port, const char* path);
 
-// Forward declaration from unique_id.ino
-String uniqueIdString();
+// Local helpers: read MAC from EEPROM and stringify
+static inline bool mac_valid(const uint8_t* m) {
+  bool allFF = true, all00 = true;
+  for (int i = 0; i < 6; ++i) { if (m[i] != 0xFF) allFF = false; if (m[i] != 0x00) all00 = false; }
+  if (allFF || all00) return false;
+  if (m[0] & 0x01) return false; // must be unicast
+  return true;
+}
+static String macToStringLocal(const uint8_t mac[6]) {
+  auto hx = [](uint8_t v) { return (char)((v < 10) ? ('0' + v) : ('A' + (v - 10))); };
+  String s; s.reserve(17);
+  for (int i = 0; i < 6; ++i) {
+    if (i) s += ':';
+    s += hx(mac[i] >> 4);
+    s += hx(mac[i] & 0x0F);
+  }
+  return s;
+}
 
 static bool loadMacFromEeprom(uint8_t mac[6]) {
   // Try to read 6-byte MAC from UNIQUE_ID_ADDR=0
@@ -86,8 +102,11 @@ static size_t buildSensorsJson(char* out, size_t maxLen) {
   size_t values_number = labels_len;
   if (values_number > SEND_ARR_SIZE) values_number = SEND_ARR_SIZE;
 
-  // Use uniqueIdString() (6-byte MAC-like) for the device id field
-  String idStr = uniqueIdString();
+  // Build device id string from EEPROM or fallback to default MAC_ADDR
+  uint8_t eepromMac[6];
+  for (int i = 0; i < 6; ++i) eepromMac[i] = EEPROM.read(0 + i);
+  const uint8_t* idMac = mac_valid(eepromMac) ? eepromMac : MAC_ADDR;
+  String idStr = macToStringLocal(idMac);
   char idBuf[24];
   strncpy(idBuf, idStr.c_str(), sizeof(idBuf));
   idBuf[sizeof(idBuf)-1] = '\0';

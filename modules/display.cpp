@@ -8,8 +8,17 @@ TFT_eSPI tft;
 // Time guard API from utils
 bool time_guard_allow(const char* key, uint32_t interval_ms);
 
-// Forward declaration from unique_id.ino
-String uniqueIdString();
+// Local helpers to read/format MAC from EEPROM
+static void readEepromMac(uint8_t out[6]) {
+  for (int i = 0; i < 6; ++i) out[i] = EEPROM.read(0 + i);
+}
+static bool macValid(const uint8_t b[6]) {
+  bool allFF = true, all00 = true;
+  for (int i = 0; i < 6; ++i) { if (b[i] != 0xFF) allFF = false; if (b[i] != 0x00) all00 = false; }
+  if (allFF || all00) return false;
+  if (b[0] & 0x01) return false;
+  return true;
+}
 
 static float prev_send_arr[31] = {0};
 const int len_prev_send_arr = sizeof(prev_send_arr)/sizeof(prev_send_arr[0]);
@@ -103,13 +112,15 @@ static void drawFooter() {
   tft.setTextDatum(BL_DATUM);
   String label;
   String value;
-  if (eepromMacInvalid()) {
+  uint8_t mac[6];
+  readEepromMac(mac);
+  if (!macValid(mac)) {
     // EEPROM has 00.. or FF.. -> show default MAC and label MAC_DEF
     label = "MAC_DEF: ";
     value = macToString(MAC_ADDR);
   } else {
     label = "MAC: ";
-    value = uniqueIdString();
+    value = macToString(mac);
   }
   tft.drawString(label + value, 2, h - 1);
 
