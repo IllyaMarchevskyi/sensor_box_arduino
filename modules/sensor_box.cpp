@@ -251,11 +251,11 @@ void pollAllSensorBoxes(bool& alive1, bool& alive2, bool& alive3, bool& alive4) 
       if (!read3HalfFloats(id, v, GAS_START_ADDR2, GAS_REG_COUNT2)) continue;
       Serial.print("ID: "); Serial.println(id);
       Serial.print("CO "); Serial.println(v[1]);
-      Serial.print("NO "); Serial.println(v[3]);
-      Serial.print("H2S "); Serial.println(v[5]);
+      Serial.print("SO2 "); Serial.println(v[3]);
+      Serial.print("NO2 "); Serial.println(v[5]);
       sensors_dec[0] = v[1] / divider; // CO
-      sensors_dec[3] = v[3] / divider; // NO
-      sensors_dec[4] = v[5] / divider; // H2S
+      sensors_dec[1] = v[3] / divider; // SO2
+      sensors_dec[2] = v[5] / divider; // NO2
       // sensors_dec[4] = v[3]; // H2S
     } else if (id == 3) {
       uint8_t REQ[12] = {0};
@@ -264,7 +264,8 @@ void pollAllSensorBoxes(bool& alive1, bool& alive2, bool& alive3, bool& alive4) 
       Serial.print("ID: "); Serial.println(id);
       Serial.print("SO2 "); Serial.println(v[0]);
       Serial.print("H2S "); Serial.println(v[1]);
-      sensors_dec[0] = v[0]; // CO
+      sensors_dec[1] = v[0]; // SO2
+      sensors_dec[4] = v[1]; // H2S
     } else if (id == 4) {
       uint8_t REQ[12] = {0};
       size_t len = buildMbTcpRead03(REQ, 0, /*id*/id, /*addr*/0x0031, /*qty*/2);
@@ -275,29 +276,29 @@ void pollAllSensorBoxes(bool& alive1, bool& alive2, bool& alive3, bool& alive4) 
       if (!read3Floats(id, v, GAS_START_ADDR, GAS_REG_COUNT)) continue;
       Serial.print("ID: "); Serial.println(id);
       Serial.print("CO "); Serial.println(v[0]);
-      Serial.print("NO2 "); Serial.println(v[1]);
-      Serial.print("SO2 "); Serial.println(v[2]);
+      Serial.print("SO2 "); Serial.println(v[1]);
+      Serial.print("NO2 "); Serial.println(v[2]);
       sensors_dec[0] = v[0]; // CO
-      sensors_dec[2] = v[1]; // NO2
-      sensors_dec[1] = v[2]; // SO2
+      sensors_dec[1] = v[1]; // SO2
+      sensors_dec[2] = v[2]; // NO2
     } else if (id == 6) {
       if (!read3Floats(id, v, GAS_START_ADDR, GAS_REG_COUNT)) continue;
       Serial.print("ID: "); Serial.println(id);
-      Serial.print("O3 "); Serial.println(v[0]);
-      Serial.print("NO "); Serial.println(v[1]);
-      Serial.print("H2S "); Serial.println(v[2]);
-      sensors_dec[5] = v[0]; // O3
-      sensors_dec[3] = v[1]; // NO
-      sensors_dec[4] = v[2]; // H2S
+      Serial.print("NO "); Serial.println(v[0]);
+      Serial.print("H2S "); Serial.println(v[1]);
+      Serial.print("O3 "); Serial.println(v[2]);
+      sensors_dec[3] = v[0]; // NO
+      sensors_dec[4] = v[1]; // H2S
+      sensors_dec[5] = v[2]; // O3
     } else if (id == 7) {
       if (!read3Floats(id, v, GAS_START_ADDR, GAS_REG_COUNT)) continue;
       Serial.print("ID: "); Serial.println(id);
-      Serial.print("O3 "); Serial.println(v[0]);
-      Serial.print("NH3 "); Serial.println(v[1]);
-      Serial.print("H2S "); Serial.println(v[2]);
-      sensors_dec[5] = v[0]; // O3
-      sensors_dec[6] = v[1]; // NH3
-      sensors_dec[4] = v[2]; // H2S
+      Serial.print("NH3 "); Serial.println(v[0]);
+      Serial.print("H2S "); Serial.println(v[1]);
+      Serial.print("O3 "); Serial.println(v[2]);
+      sensors_dec[6] = v[0]; // NH3
+      sensors_dec[4] = v[1]; // H2S
+      sensors_dec[5] = v[2]; // O3
     } else if (id == 8) {
       float NO = 0, NO2 = 0;
       uint8_t REQ[12] = {0};
