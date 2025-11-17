@@ -48,7 +48,7 @@ uint8_t         time_sleep = 20;
 const uint8_t  PM_ID             = 10;
 const uint8_t  PM_START_ADDR     = 1;
 const uint8_t  PM_REG_COUNT      = 2;
-const int divider = 100;
+const int pm_divider = 100;
 
 // Gas register map
 constexpr uint16_t GAS_START_ADDR = 20;
