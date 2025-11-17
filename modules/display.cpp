@@ -47,16 +47,16 @@ void drawData() {
   int x;
   int y;
   for (int i = 0; i < labels_len; i++) {
-      x = (i < len_col) ? col1_x : (i < len_col * 2) ? col2_x : col3_x;
-      y = (i < len_col) ? i * y_step : (i < len_col * 2) ? (i - len_col) * y_step: (i - len_col*2) * y_step;
-      Serial.print("X: "); Serial.print(x); Serial.print("Y: "); Serial.println(y);
-      tft.fillRect(x, y, 150, y_step, TFT_BLACK);
-      char label[16]; sprintf(label, "%s: ", labels[i]);
-      tft.setCursor(x, y); tft.print(label);
-      x = (i < len_col) ? col1_x_value : (i < len_col*2) ? col2_x_value: col3_x_value;
-      tft.setCursor(x, y);
-      if (send_arr[i] == -1) tft.print("#.##"); else tft.print(send_arr[i], 2);
-      prev_send_arr[i] = send_arr[i];
+    x = (i < len_col) ? col1_x : (i < len_col * 2) ? col2_x : col3_x;
+    y = (i < len_col) ? i * y_step : (i < len_col * 2) ? (i - len_col) * y_step: (i - len_col*2) * y_step;
+    Serial.print("X: "); Serial.print(x); Serial.print("Y: "); Serial.println(y);
+    tft.fillRect(x, y, 150, y_step, TFT_BLACK);
+    char label[16]; sprintf(label, "%s: ", labels[i].name);
+    tft.setCursor(x, y); tft.print(label);
+    x = (i < len_col) ? col1_x_value : (i < len_col*2) ? col2_x_value: col3_x_value;
+    tft.setCursor(x, y);
+    if (send_arr[i] == -1) tft.print("#.##"); else tft.print(send_arr[i], 2);
+    prev_send_arr[i] = send_arr[i];
   }
 
 }

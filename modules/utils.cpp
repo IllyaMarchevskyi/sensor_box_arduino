@@ -2,13 +2,31 @@
 #include <string.h>
 
 // With meteo removed: 9 sensors + 1 radiation + 2 service
-constexpr size_t CH_COUNT     = 12;
 int tmp_id_value              = 0;
 static uint16_t acc_count            = 0;
 
 static float    acc_sum[CH_COUNT] = {0};
 static float    acc_sq_sum[CH_COUNT] = {0};
+static float    channel_avg[CH_COUNT] = {0};
+static float    channel_std[CH_COUNT] = {0};
 constexpr uint8_t SAMPLES_PER_MIN    = 60;
+
+static void rebuildSendArrayFromLabels() {
+  size_t used = labels_len;
+  if (used > SEND_ARR_SIZE) used = SEND_ARR_SIZE;
+  for (size_t i = 0; i < used; ++i) {
+    float value = DEFAULT_SEND_VAL;
+    ChannelIndex channel = labels[i].channel;
+    size_t idx = static_cast<size_t>(channel);
+    if (idx < CH_COUNT) {
+      value = labels[i].useStd ? channel_std[idx] : channel_avg[idx];
+    }
+    send_arr[i] = value;
+  }
+  for (size_t i = used; i < SEND_ARR_SIZE; ++i) {
+    send_arr[i] = DEFAULT_SEND_VAL;
+  }
+}
 
 volatile bool g_rs485_busy = false;
 
@@ -182,7 +200,7 @@ void arrSumPeriodicUpdate() {
 void sendArrPeriodicUpdate() {
   for(int id=0; id<labels_len; id++)
   {
-    Serial.print(labels[id]);
+    Serial.print(labels[id].name);
     Serial.print(": ");
     Serial.print("send_arr");
     Serial.print('[');
@@ -205,19 +223,23 @@ void collectAndAverageEveryMinute() {
 
   if (acc_count >= SAMPLES_PER_MIN) {
     for (size_t index = 0; index < CH_COUNT; ++index) {
-      float tmp = acc_sum[index] / acc_count;
-      send_arr[index] = tmp; // середнє за хвилину
-      
-      if (index < labels_len - CH_COUNT) {
-        float tmp2 = (acc_sq_sum[index]-SAMPLES_PER_MIN*tmp*tmp)/(SAMPLES_PER_MIN-1);
-        if (tmp2 < 0.0f) tmp2 = 0.0f;
-        send_arr[CH_COUNT+index] = sqrtf(tmp2);
-        }
-      acc_sum[index]  = 0;            
+      float sampleCount = (acc_count == 0) ? 1.0f : (float)acc_count;
+      float avg = acc_sum[index] / sampleCount;
+      channel_avg[index] = avg; // середнє за хвилину
+
+      float variance = 0.0f;
+      if (sampleCount > 1.0f) {
+        variance = (acc_sq_sum[index] - sampleCount * avg * avg) / (sampleCount - 1.0f);
+        if (variance < 0.0f) variance = 0.0f;
+      }
+      channel_std[index] = sqrtf(variance);
+
+      acc_sum[index]  = 0;
       acc_sq_sum[index] = 0;           // готуємося до наступної хвилини
     }
     acc_count = 0;
 
+    rebuildSendArrayFromLabels();
     Serial.println(F("--- 1-min averages ready ---"));
     sendArrPeriodicUpdate();
   }

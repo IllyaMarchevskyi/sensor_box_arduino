@@ -1,6 +1,6 @@
 
 //######### VERSION #########
-#define VERSION "1.0.2"
+#define VERSION "1.1.0"
 //###########################
 
 /*
@@ -65,7 +65,7 @@ void loop() {
   if(millis() - main_timer >= 1000){
     main_timer = millis();
     // SERViSE Temperature
-    TIME_CALL("Service t and rh", read_TEMP_RH_ID10(service_t));
+    TIME_CALL("Service t and rh", read_TEMP_RH(service_t));
     
     // Sensor Box
     TIME_CALL("Sensor Box", pollAllSensorBoxes(alive2, alive4, alive6, alive7));

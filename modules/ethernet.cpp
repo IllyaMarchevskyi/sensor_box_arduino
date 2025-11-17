@@ -97,7 +97,7 @@ void initEthernet() {
 static size_t buildSensorsJson(char* out, size_t maxLen) {
   // send_arr[] and labels[] are defined in the main TU and included before this file
   extern double send_arr[];            // from sensor_box_arduino.ino
-  extern const char* const labels[];   // from Config.h
+  extern const LabelEntry labels[];    // from Config.h
   extern const size_t labels_len;      // from Config.h
   size_t values_number = labels_len;
   if (values_number > SEND_ARR_SIZE) values_number = SEND_ARR_SIZE;
@@ -125,14 +125,13 @@ static size_t buildSensorsJson(char* out, size_t maxLen) {
   // Add sensor values, skipping service keys (S_*), including S_T, S_RH
   bool first = false; // we already wrote one key (id)
   for (size_t i = 0; i < values_number; ++i) {
-    const char* key = labels[i];
-    if (!key) continue;
-    if (key[0] == 'S' && key[1] == '_') continue; // skip S_* keys
+    const LabelEntry& spec = labels[i];
+    if (!spec.name || spec.useStd) continue;
 
     // Append comma before next key
     emit(",");
     // Key
-    emit("\""); emit(key); emit("\":");
+    emit("\""); emit(spec.name); emit("\":");
     // Value (as number). On AVR, use dtostrf to format float/double reliably.
     char num[24];
     dtostrf(send_arr[i], 0, 3, num); // 3 decimals; width 0 to avoid left padding

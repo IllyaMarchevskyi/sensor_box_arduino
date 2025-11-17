@@ -47,11 +47,16 @@ uint8_t         time_sleep = 20;
 // PM sensor map
 const uint8_t  PM_ID             = 10;
 const uint8_t  PM_START_ADDR     = 1;
-const uint8_t  PM_REG_COUNT      = 4;
+const uint8_t  PM_REG_COUNT      = 2;
 
 // Gas register map
 constexpr uint16_t GAS_START_ADDR = 20;
 constexpr uint16_t GAS_REG_COUNT  = 6;
+
+// Gas register map for 2 id
+constexpr uint16_t GAS_START_ADDR2 = 0;
+constexpr uint16_t GAS_REG_COUNT2  = 6;
+
 
 // ---------- Ethernet  ----------
 // Local TCP server
@@ -93,14 +98,57 @@ const int y_step = 30; // Крок відступу
 const int len_col = 7; // Кількість елементів в стопчику
 
 
-// ---------------- LABELS NAME ----------------
-const char* const labels[] = {
-  "CO",  "SO2",  "NO2",  "NO",
-  "H2S", "O3",   "NH3",  "PM2.5",
-  "PM10","R",    "S_T",  "S_RH",
-  "S_CO","S_SO2","S_NO2","S_NO",
-  "S_H2S","S_O3","S_NH3",
+enum ChannelIndex : uint8_t {
+  CH_CO = 0,
+  CH_SO2,
+  CH_NO2,
+  CH_NO,
+  CH_H2S,
+  CH_O3,
+  CH_NH3,
+  CH_PM2_5,
+  CH_PM10,
+  CH_R,
+  CH_S_T,
+  CH_S_RH,
+  CH_TOTAL_COUNT
 };
+constexpr size_t CH_COUNT = CH_TOTAL_COUNT;
+
+struct LabelEntry {
+  const char* name;
+  ChannelIndex channel;
+  bool useStd;
+};
+
+#define LABEL_AVG(name, channel) { name, channel, false }
+#define LABEL_STD(name, channel) { name, channel, true }
+
+const LabelEntry labels[] = {
+  LABEL_AVG("CO",    CH_CO),
+  LABEL_AVG("SO2",   CH_SO2),
+  LABEL_AVG("NO2",   CH_NO2),
+  LABEL_AVG("NO",    CH_NO),
+  LABEL_AVG("H2S",   CH_H2S),
+  LABEL_AVG("O3",    CH_O3),
+  LABEL_AVG("NH3",   CH_NH3),
+  LABEL_AVG("PM2.5", CH_PM2_5),
+  LABEL_AVG("PM10",  CH_PM10),
+  LABEL_AVG("R",     CH_R),
+  LABEL_AVG("S_T",   CH_S_T),
+  LABEL_AVG("S_RH",  CH_S_RH),
+  LABEL_STD("S_CO",   CH_CO),
+  LABEL_STD("S_SO2",  CH_SO2),
+  LABEL_STD("S_NO2",  CH_NO2),
+  LABEL_STD("S_NO",   CH_NO),
+  LABEL_STD("S_H2S",  CH_H2S),
+  LABEL_STD("S_O3",   CH_O3),
+  LABEL_STD("S_NH3",  CH_NH3)
+};
+
+#undef LABEL_AVG
+#undef LABEL_STD
+
 constexpr size_t labels_len = sizeof(labels) / sizeof(labels[0]);
 
 // Test values
