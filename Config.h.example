@@ -44,11 +44,12 @@ const IPAddress ip_8(192, 168, 0, 1);
 const int       port       = 5581; 
 uint8_t         time_sleep = 20;
 
-// PM sensor map
+/// PM sensor map
 const uint8_t  PM_ID             = 10;
 const uint8_t  PM_START_ADDR     = 1;
 const uint8_t  PM_REG_COUNT      = 2;
-const int pm_divider = 100;
+const int pm_divider = 1000;
+
 
 // Gas register map
 constexpr uint16_t GAS_START_ADDR = 20;
@@ -57,7 +58,8 @@ constexpr uint16_t GAS_REG_COUNT  = 6;
 // Gas register map for 2 id
 constexpr uint16_t GAS_START_ADDR2 = 0;
 constexpr uint16_t GAS_REG_COUNT2  = 6;
-const int divider = 100;
+const int co_divider = 100;
+const int so2_no2_divider = 1000;
 
 
 // ---------- Ethernet  ----------
