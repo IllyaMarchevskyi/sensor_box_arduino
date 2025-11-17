@@ -253,9 +253,9 @@ void pollAllSensorBoxes(bool& alive1, bool& alive2, bool& alive3, bool& alive4) 
       Serial.print("CO "); Serial.println(v[1]);
       Serial.print("NO "); Serial.println(v[3]);
       Serial.print("H2S "); Serial.println(v[5]);
-      sensors_dec[0] = v[1] / 100; // CO
-      sensors_dec[3] = v[3] / 100; // NO
-      sensors_dec[4] = v[5] / 100; // H2S
+      sensors_dec[0] = v[1] / divider; // CO
+      sensors_dec[3] = v[3] / divider; // NO
+      sensors_dec[4] = v[5] / divider; // H2S
       // sensors_dec[4] = v[3]; // H2S
     } else if (id == 3) {
       uint8_t REQ[12] = {0};
@@ -321,11 +321,11 @@ void pollAllSensorBoxes(bool& alive1, bool& alive2, bool& alive3, bool& alive4) 
 
   float pm25=0, pm10=0;
   if (readPM(PM_ID, PM_START_ADDR, pm25, pm10)) {
-    int divider = 1;
+    
     Serial.print("PM25 "); Serial.println(pm25 / divider);
     Serial.print("PM10 "); Serial.println(pm10 / divider);
-    sensors_dec[7] = pm25 / divider;
-    sensors_dec[8] = pm10 / divider;
+    sensors_dec[7] = pm25 / pm_divider;
+    sensors_dec[8] = pm10 / pm_divider;
   } else{
     Serial.println("Not Found PM25, PM10");
   }

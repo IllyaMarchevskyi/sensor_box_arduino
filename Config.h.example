@@ -48,6 +48,7 @@ uint8_t         time_sleep = 20;
 const uint8_t  PM_ID             = 10;
 const uint8_t  PM_START_ADDR     = 1;
 const uint8_t  PM_REG_COUNT      = 2;
+const int divider = 100;
 
 // Gas register map
 constexpr uint16_t GAS_START_ADDR = 20;
@@ -56,6 +57,7 @@ constexpr uint16_t GAS_REG_COUNT  = 6;
 // Gas register map for 2 id
 constexpr uint16_t GAS_START_ADDR2 = 0;
 constexpr uint16_t GAS_REG_COUNT2  = 6;
+const int divider = 100;
 
 
 // ---------- Ethernet  ----------
