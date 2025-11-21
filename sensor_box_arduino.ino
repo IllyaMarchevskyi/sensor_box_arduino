@@ -47,6 +47,8 @@ void setup() {
   initDisplay();
   Serial.begin(SERIAL0_BAUD);
   Serial.setTimeout(10);
+  Serial.println("Setup Monitoring");
+  
   initSerials();
 
   pinMode(RS485_DIR_PIN, OUTPUT);
@@ -57,6 +59,7 @@ void setup() {
   sensor_box.postTransmission(post_transmission_main);
 
   initEthernet();
+  Serial.println("Finsh Initialization");
 }
 void loop() {
   bool alive2=false, alive4=false, alive6=false, alive7=false;

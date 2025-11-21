@@ -2,6 +2,8 @@
 bool time_guard_allow(const char* key, uint32_t interval_ms);
 uint8_t relay_on[] = {0x0B, 0x05, 0x00, 0x00, 0xFF, 0x00};
 uint8_t relay_off[] = {0x0B, 0x05, 0x00, 0x00, 0x00, 0x00};
+bool relay_turn_off = false;
+bool relay_turn_on = false;
 
 
 
@@ -27,37 +29,56 @@ uint16_t crc16_modbus(const uint8_t* p, size_t n) {
 
 
 void relayTimedPulse(uint8_t unitId, uint8_t channel) {
+  uint32_t start_time;
+  uint16_t crc;
   relay_on[0] = (uint8_t)(unitId & 0xFF);
   relay_on[3] = (uint8_t)(channel & 0xFF);
   relay_off[0] = (uint8_t)(unitId & 0xFF);
   relay_off[3] = (uint8_t)(channel & 0xFF);
 
-  Serial.println("sendReq");
-  if (!rs485_acquire(300)) {
-    Serial.println("RS485 busy, skip relay pulse");
-    return;
-  }
-  pre_transmission_main();
-  uint16_t crc = crc16_modbus(relay_on, sizeof(relay_on));
-  Serial3.write(relay_on, sizeof(relay_on));
-  Serial3.write(crc & 0xFF);
-  Serial3.write((crc >> 8) & 0xFF);
-  Serial3.flush();
-  rs485_release();
-  delay(RELAY_PULSE_MS);
 
-  if (!rs485_acquire(300)) {
-    Serial.println("RS485 busy, skip relay pulse");
-    return;
+  if (relay_turn_off) {
+    Serial.println("Relay Stop id 0");
+    if (!rs485_acquire(300)) {
+      Serial.println("RS485 busy, skip relay pulse");
+      return;
+    }
+
+    pre_transmission_main();
+    crc = crc16_modbus(relay_on, sizeof(relay_on));
+    Serial3.write(relay_on, sizeof(relay_on));
+    Serial3.write(crc & 0xFF);
+    Serial3.write((crc >> 8) & 0xFF);
+    Serial3.flush();
+    rs485_release();
+    start_time = millis();
+    relay_turn_off = false;
   }
-  crc = crc16_modbus(relay_off, sizeof(relay_off));
-  Serial3.write(relay_off, sizeof(relay_off));
-  Serial3.write(crc & 0xFF);
-  Serial3.write((crc >> 8) & 0xFF);
-  Serial3.flush();
-  post_transmission_main();
-  rs485_release();
+  // delay(RELAY_PULSE_MS);
+  if(time_guard_allow("print_time_wait_start_id_0", 1000)){
+    Serial.print(millis() - start_time); Serial.print(" >= ");  Serial.print(RELAY_PULSE_MS); Serial.println(relay_turn_on);
+    Serial.println(millis() - start_time >= RELAY_PULSE_MS); Serial.println(relay_turn_on);
+  }
+  if (millis() - start_time >= RELAY_PULSE_MS && relay_turn_on){
+    Serial.println("Relay Start id 0");
+
+    if (!rs485_acquire(300)) {
+      Serial.println("RS485 busy, skip relay pulse");
+      return;
+    }
+
+    pre_transmission_main();
+    crc = crc16_modbus(relay_off, sizeof(relay_off));
+    Serial3.write(relay_off, sizeof(relay_off));
+    Serial3.write(crc & 0xFF);
+    Serial3.write((crc >> 8) & 0xFF);
+    Serial3.flush();
+    rs485_release();
+    start_time = millis();
+    relay_turn_on = false;
+  }
 }
+
 
 bool isInternetAlive(const IPAddress& testIp, uint16_t port, uint16_t timeoutMs=600) {
   Ethernet.maintain();                 
@@ -74,10 +95,12 @@ bool isInternetAlive(const IPAddress& testIp, uint16_t port, uint16_t timeoutMs=
 }
 
 void ensureNetOrRebootPort0() {
+  relayTimedPulse(UNIT_ID, CH);
   if (!time_guard_allow("relay", RELAY_SLEEP)) return;
-  
   if (isInternetAlive(NET_CHECK_IP, NET_CHECK_PORT)) return;
 
-  relayTimedPulse(UNIT_ID, CH);
+  // relayTimedPulse(UNIT_ID, CH);
+  relay_turn_off = true;
+  relay_turn_on = true;
 }
 

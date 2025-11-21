@@ -73,13 +73,16 @@ static bool loadMacFromEeprom(uint8_t mac[6]) {
 void initEthernet() {
   Ethernet.init(ETH_CS);
   uint8_t mac[6];
+  Serial.println("Initialization Ethernet");
   if (!loadMacFromEeprom(mac)) {
     // Fallback to default MAC from Config.h when EEPROM contains 00.. or FF..
+    Serial.println("Get Mac from EEPROM");
     memcpy(mac, MAC_ADDR, 6);
   }
-  if (Ethernet.begin(mac) == 0) {
+  if (Ethernet.begin(mac, 1000) == 0) {
+    Serial.println("Get Mac Def");
     Serial.println("DHCP failed. Using static IP.");
-    Ethernet.begin(mac, STATIC_IP, DNS_IP);
+    Ethernet.begin(mac, STATIC_IP, GETWAY);
   }
   server.begin();
   Serial.print("Modbus server on ");
