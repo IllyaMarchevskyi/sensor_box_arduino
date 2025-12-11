@@ -6,7 +6,7 @@
 TFT_eSPI tft;
 
 // Time guard API from utils
-bool time_guard_allow(const char* key, uint32_t interval_ms);
+bool time_guard_allow(const char* key, uint32_t interval_ms, bool wait_first=false);
 
 // Local helpers to read/format MAC from EEPROM
 static void readEepromMac(uint8_t out[6]) {

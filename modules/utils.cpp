@@ -38,7 +38,9 @@ volatile bool g_rs485_busy = false;
 struct _TimeGuardEntry { char key[32]; uint32_t last_ms; };
 static _TimeGuardEntry _tg_entries[8];
 
-bool time_guard_allow(const char* key, uint32_t interval_ms) {
+// wait_first=true forces the first invocation for a key to wait for the full
+// interval instead of firing immediately.
+bool time_guard_allow(const char* key, uint32_t interval_ms, bool wait_first /*=false*/) {
   uint32_t now = millis();
   int free_i = -1;
   for (int i = 0; i < (int)(sizeof(_tg_entries)/sizeof(_tg_entries[0])); ++i) {
@@ -54,7 +56,7 @@ bool time_guard_allow(const char* key, uint32_t interval_ms) {
   strncpy(_tg_entries[use_i].key, key, sizeof(_tg_entries[use_i].key)-1);
   _tg_entries[use_i].key[sizeof(_tg_entries[use_i].key)-1] = '\0';
   _tg_entries[use_i].last_ms = now;
-  return true;
+  return !wait_first;
 }
 
 uint32_t time_guard_remaining(const char* key, uint32_t interval_ms) {

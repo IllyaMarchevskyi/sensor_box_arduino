@@ -8,7 +8,7 @@
 extern EthernetServer server;
 
 // Time guard API from utils
-bool time_guard_allow(const char* key, uint32_t interval_ms);
+bool time_guard_allow(const char* key, uint32_t interval_ms, bool wait_first=false);
 
 // API key defined in Config.h (included in main TU)
 extern const char API_KEY[];
