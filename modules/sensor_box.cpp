@@ -244,7 +244,7 @@ void pollAllSensorBoxes(bool& alive1, bool& alive2, bool& alive3, bool& alive4) 
       // sensors_dec[4] = v[3]; // H2S
     } else if (id == 3) {
       uint8_t REQ[12] = {0};
-      size_t len = buildMbTcpRead03(REQ, 0, /*id*/id, /*addr*/0x0031, /*qty*/4);
+      size_t len = buildMbTcpRead03(REQ, 0, /*id*/id, /*addr*/0x0035, /*qty*/4);
       sendHexTCP(v, ip_3, port, REQ, len, time_sleep);
       Serial.print("ID: "); Serial.println(id);
       Serial.print("SO2 "); Serial.println(v[0]);

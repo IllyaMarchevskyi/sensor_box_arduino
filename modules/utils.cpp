@@ -11,6 +11,9 @@ static float    channel_avg[CH_COUNT] = {0};
 static float    channel_std[CH_COUNT] = {0};
 constexpr uint8_t SAMPLES_PER_MIN    = 60;
 
+bool time_guard_allow(const char *key, uint32_t interval_ms,
+                            bool wait_first = false);
+
 static void rebuildSendArrayFromLabels() {
   size_t used = labels_len;
   if (used > SEND_ARR_SIZE) used = SEND_ARR_SIZE;
